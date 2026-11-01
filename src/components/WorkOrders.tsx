@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { Plus, Search, RefreshCw, Wrench, ClipboardCheck, Clock3, CreditCard, ImagePlus, Check, X, ChevronRight, AlertTriangle, CalendarClock } from 'lucide-react'
+import { Plus, Search, RefreshCw, Wrench, CarFront, ClipboardCheck, Clock3, CreditCard, ImagePlus, Check, X, ChevronRight, AlertTriangle, CalendarClock } from 'lucide-react'
 
 type Row = Record<string, any>
 type Props = { workshop: Row; userId?: string; role: string; demoMode?: boolean }
