@@ -1,0 +1,12 @@
+drop policy ot_detalles_select on public.ot_detalles; create policy ot_detalles_select on public.ot_detalles for select to authenticated using(private.tiene_permiso_taller(taller_id,'ordenes','ver'));
+drop policy ot_tareas_select on public.ot_tareas; create policy ot_tareas_select on public.ot_tareas for select to authenticated using(private.tiene_permiso_taller(taller_id,'ordenes','ver'));
+drop policy ot_asignaciones_select on public.ot_asignaciones; create policy ot_asignaciones_select on public.ot_asignaciones for select to authenticated using(private.tiene_permiso_taller(taller_id,'ordenes','ver'));
+drop policy ot_tiempos_select on public.ot_tiempos; create policy ot_tiempos_select on public.ot_tiempos for select to authenticated using(private.tiene_permiso_taller(taller_id,'ordenes','ver'));
+drop policy ot_inspecciones_select on public.ot_inspecciones; create policy ot_inspecciones_select on public.ot_inspecciones for select to authenticated using(private.tiene_permiso_taller(taller_id,'ordenes','ver'));
+drop policy ot_pagos_select on public.ot_pagos; create policy ot_pagos_select on public.ot_pagos for select to authenticated using(private.tiene_permiso_taller(taller_id,'ordenes','ver'));
+drop policy ot_adjuntos_select on public.ot_adjuntos; create policy ot_adjuntos_select on public.ot_adjuntos for select to authenticated using(private.tiene_permiso_taller(taller_id,'ordenes','ver'));
+drop policy auditoria_select on public.auditoria; create policy auditoria_select on public.auditoria for select to authenticated using(private.tiene_permiso_taller(taller_id,'auditoria','ver'));
+drop policy usuarios_taller_select on public.usuarios_taller; create policy usuarios_taller_select on public.usuarios_taller for select to authenticated using(private.tiene_permiso_taller(taller_id,'usuarios','ver'));
+drop policy permisos_rol_select on public.permisos_rol_taller; create policy permisos_rol_select on public.permisos_rol_taller for select to authenticated using(private.tiene_rol_taller(taller_id,array['administrador','gerente','administracion']));
+drop policy config_taller_select on public.configuracion_taller; create policy config_taller_select on public.configuracion_taller for select to authenticated using(private.tiene_permiso_taller(taller_id,'configuracion','ver'));
+drop policy talleres_select on public.talleres; create policy talleres_select on public.talleres for select to authenticated using(private.tiene_permiso_taller(id,'configuracion','ver'));
