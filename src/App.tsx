@@ -141,7 +141,7 @@ export default function App(){
    const d=demoData;setLookups(demoLookups(d))
    if(section==='Configuración'){setConfig(d.config||config);setWorkshopForm(d.taller||workshopForm);setRolePermissions(d.rolePermissions||{});setRows([]);setLoading(false);return}
    if(section==='Resumen'){const active=d.productos.filter((x:Row)=>x.activo);const low=active.filter((x:Row)=>(x.stock||[]).reduce((a:number,y:Row)=>a+Number(y.cantidad),0)<=Number(x.stock_minimo)).length;setStats({products:active.length,clients:d.clientes.filter((x:Row)=>x.activo).length,vehicles:d.vehiculos.filter((x:Row)=>x.activo).length,low,value:active.reduce((a:number,x:Row)=>a+Number(x.costo_unitario)*((x.stock||[]).reduce((b:number,y:Row)=>b+Number(y.cantidad),0)),0),movements:d.movimientos.length});setRows([])}
-   else setRows((d[({Inventario:'productos',Clientes:'clientes',Vehículos:'vehiculos',Proveedores:'proveedores',Categorías:'categorias',Bodegas:'bodegas',Movimientos:'movimientos',Usuarios:'usuarios',Auditoría:'auditoria'} as Record<string,string>)[section]]||[]).filter((x:Row)=>x.activo!==false||section==='Movimientos'))
+   else setRows((d[({Inventario:'productos',Clientes:'clientes',Vehículos:'vehiculos',Proveedores:'proveedores',Categorías:'categorias',Bodegas:'bodegas',Movimientos:'movimientos',Usuarios:'usuarios',Auditoría:'auditoria','Catálogo de trabajos':'servicios_taller'} as Record<string,string>)[section]]||[]).filter((x:Row)=>x.activo!==false||section==='Movimientos'))
    setLoading(false);return
   }
   const id=workshop.taller_id
@@ -179,7 +179,7 @@ export default function App(){
   setSaving(true);setError('');setNotice('')
   try{
    if(demoMode){
-    const d={...demoData};const collection=({Inventario:'productos',Clientes:'clientes',Vehículos:'vehiculos',Proveedores:'proveedores',Categorías:'categorias',Bodegas:'bodegas',Movimientos:'movimientos',Usuarios:'usuarios',Auditoría:'auditoria'} as Record<string,string>)[section]
+    const d={...demoData};d.servicios_taller=d.servicios_taller||[];const collection=({Inventario:'productos',Clientes:'clientes',Vehículos:'vehiculos',Proveedores:'proveedores',Categorías:'categorias',Bodegas:'bodegas',Movimientos:'movimientos',Usuarios:'usuarios',Auditoría:'auditoria'} as Record<string,string>)[section]
     if(section==='Movimientos'){
      const qty=Number(form.cantidad);const delta=form.tipo==='entrada'?Math.abs(qty):form.tipo==='salida'?-Math.abs(qty):qty
      const p=d.productos.find((x:Row)=>x.id===form.producto_id);if(!p)throw new Error('Selecciona un producto válido.')
