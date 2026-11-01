@@ -12,7 +12,7 @@ export default function ApprovalPortal({token}:{token:string}){
   if(rut.trim().length<7||rut.trim().length>15){setError('Ingresa un RUT o documento válido.');return}
   if(!consent){setError('Debes confirmar que revisaste el presupuesto y autorizas registrar tu respuesta.');return}
   if(!accepted&&!window.confirm('¿Confirmas que deseas rechazar este presupuesto?'))return
-  setSaving(true);setError('');const {data,error}=await supabase.functions.invoke('presupuesto-ot',{body:{action:'respond',token,accepted,nombre:name.trim(),rut:rut.trim(),consent:true}})
+  setSaving(true);setError('');const {error}=await supabase.functions.invoke('presupuesto-ot',{body:{action:'respond',token,accepted,nombre:name.trim(),rut:rut.trim(),consent:true}})
   if(error)setError(error.message||'No se pudo registrar la respuesta.')
   else{setApproval((current:Row|null)=>current?{...current,estado:accepted?'aprobado':'rechazado',respondido_por_nombre:name.trim(),respuesta_at:new Date().toISOString()}:current);setNotice(accepted?'Presupuesto autorizado correctamente.':'Rechazo registrado correctamente.')}
   setSaving(false)
