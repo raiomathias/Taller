@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import DatePicker from './DatePicker'
-import { Plus, Search, RefreshCw, Wrench, CarFront, ClipboardCheck, Clock3, CreditCard, ImagePlus, Check, X, ChevronRight, AlertTriangle, CalendarClock } from 'lucide-react'
+import { Plus, Search, RefreshCw, Wrench, CarFront, ClipboardCheck, Clock3, CreditCard, ImagePlus, Check, X, ChevronRight, AlertTriangle, CalendarClock, FileDown, Send, Copy } from 'lucide-react'
 
 type Row = Record<string, any>
 type Props = { workshop: Row; userId?: string; role: string; demoMode?: boolean; permissions?: {view?:boolean;create?:boolean;edit?:boolean} }
@@ -252,6 +252,15 @@ export default function WorkOrders({workshop,userId,role,demoMode=false,permissi
   const {data,error}=await supabase.storage.from('ot-evidencias').createSignedUrl(a.storage_path,120)
   if(error){setError(error.message);return}window.open(data.signedUrl,'_blank','noopener,noreferrer')
  }
+ async function requestApproval(){
+  if(!selected||!canEditOrder||demoMode)return
+  setSaving(true);setError('');setApprovalUrl('')
+  try{const {data,error}=await supabase.functions.invoke('presupuesto-ot',{body:{action:'create',order_id:selected.id}});if(error)throw error;if(!data?.approval_url)throw new Error('No se recibió el enlace de autorización.');setApprovalUrl(data.approval_url);try{await navigator.clipboard.writeText(data.approval_url);setNotice('Enlace de aprobación creado y copiado. Envíalo al cliente por WhatsApp o correo.')}catch{setNotice('Enlace de aprobación creado. Copia el enlace que aparece debajo de la orden.')}}
+  catch(e:any){setError(e.message||'No se pudo crear el enlace de aprobación.')}setSaving(false)
+ }
+ async function copyApprovalUrl(){if(!approvalUrl)return;try{await navigator.clipboard.writeText(approvalUrl);setNotice('Enlace copiado.')}catch{setError('No se pudo copiar automáticamente. Selecciona y copia el enlace.')}}
+ function printBudget(){if(selected)setPrintingBudget(true)}
+
  async function startStopTime(){
   if(!selected)return
   const running=times.find(t=>!t.termino&&t.mecanico_id===userId)
@@ -278,9 +287,12 @@ export default function WorkOrders({workshop,userId,role,demoMode=false,permissi
     <div className="wo-progress">{statusOrder.slice(0,10).map((s,i)=><span key={s} title={statusLabels[s]} className={statusOrder.indexOf(selected.estado)>=i?'done':''}/>)}</div>
     <div className="wo-actions">
      {canEditOrder&&<select value={selected.estado} onChange={e=>void changeStatus(e.target.value)} disabled={saving}>{statusOrder.map(s=><option key={s} value={s}>{statusLabels[s]}</option>)}</select>}
+     <button className="secondary" onClick={printBudget}><FileDown size={15}/> Presupuesto PDF</button>
+     {!demoMode&&canEditOrder&&<button className="secondary" disabled={saving||details.length===0} onClick={()=>void requestApproval()}><Send size={15}/> Solicitar aprobación</button>}
      {canOperate&&<button className="secondary" onClick={()=>void startStopTime()}><Clock3 size={15}/>{times.some(t=>!t.termino&&t.mecanico_id===userId)?'Detener tiempo':'Iniciar tiempo'}</button>}
      {canCharge&&<button className="primary" onClick={()=>setShowPayment(true)}><CreditCard size={15}/> Registrar pago</button>}
     </div>
+    {approvalUrl&&<div className="approval-link-banner"><div><b>Enlace de autorización listo</b><br/><a href={approvalUrl} target="_blank" rel="noreferrer">{approvalUrl}</a></div><button className="secondary small" onClick={()=>void copyApprovalUrl()}><Copy size={14}/> Copiar</button></div>}
     <div className="wo-tabs">{[['resumen','Resumen'],['trabajos','Trabajos'],['tareas','Tareas'],['pagos','Pagos'],['inspeccion','Inspección'],['archivos','Archivos'],['tiempos','Tiempos']].map(([k,l])=><button key={k} className={tab===k?'active':''} onClick={()=>setTab(k)}>{l}</button>)}</div>
     {tab==='resumen'&&<div className="wo-tab-content">
      <div className="wo-summary-grid"><div><small>Presupuesto total</small><b>{money(selected.total)}</b></div><div><small>Pagado</small><b>{money(totalPaid)}</b></div><div><small>Saldo pendiente</small><b className={Number(selected.saldo)>0?'text-warning':''}>{money(selected.saldo)}</b></div></div>
@@ -316,6 +328,20 @@ export default function WorkOrders({workshop,userId,role,demoMode=false,permissi
    {showTask&&<div className="form-grid"><label className="wo-field wide">Nombre de la tarea<input value={task.titulo||''} onChange={e=>setTask({...task,titulo:e.target.value})}/></label><label className="wo-field wide">Descripción<textarea value={task.descripcion||''} onChange={e=>setTask({...task,descripcion:e.target.value})}/></label><label className="wo-field">Horas estimadas<input type="number" min="0" step="0.25" value={task.horas_estimadas} onChange={e=>setTask({...task,horas_estimadas:e.target.value})}/></label><label className="wo-field">Asignar mecánico<select value={task.mecanico_id||''} onChange={e=>setTask({...task,mecanico_id:e.target.value})}><option value="">Sin asignar</option>{team.filter(m=>m.rol==='mecanico').map(m=><option key={m.usuario_id} value={m.usuario_id}>{m.perfiles?.nombre_completo||m.usuario_id}</option>)}</select></label><label className="wo-field">Prioridad<select value={task.prioridad} onChange={e=>setTask({...task,prioridad:e.target.value})}><option value="normal">Normal</option><option value="alta">Alta</option><option value="urgente">Urgente</option><option value="baja">Baja</option></select></label></div>}
    {error&&<div className="error">{error}</div>}<div className="modal-actions"><button className="secondary" onClick={()=>{setShowCreate(false);setShowLine(false);setShowPayment(false);setShowTask(false)}}>Cancelar</button><button className="primary" disabled={saving} onClick={()=>void(showCreate?createOrder():showLine?addLine():showPayment?addPayment():addTask())}>{saving?'Guardando…':<><Check size={15}/> Guardar</>}</button></div>
   </div></div>}
+  {printingBudget&&selected&&<div className="budget-print">
+   <div style={{display:'flex',justifyContent:'space-between',gap:'20px',borderBottom:'2px solid #222',paddingBottom:'14px'}}>
+    <div><h1 style={{fontSize:'22pt',margin:'0 0 5px'}}>{workshop.nombre||'Taller'}</h1><p className="print-muted" style={{margin:0}}>{[workshop.rut,workshop.telefono,workshop.email,workshop.direccion,workshop.ciudad].filter(Boolean).join(' · ')}</p></div>
+    <div style={{textAlign:'right'}}><h2 style={{fontSize:'18pt',margin:'0 0 5px'}}>PRESUPUESTO</h2><b>{selected.numero_ot}</b><p className="print-muted">{new Date().toLocaleDateString('es-CL')}</p></div>
+   </div>
+   <h3 style={{margin:'20px 0 8px'}}>Datos del cliente y vehículo</h3><p><b>Cliente:</b> {customerName(selected)} · <b>RUT:</b> {selected.clientes?.rut||clients.find(c=>c.id===selected.cliente_id)?.rut||'—'}</p>
+   <p><b>Vehículo:</b> {vehicleName(selected)} · <b>Kilometraje:</b> {Number(selected.kilometraje_ingreso||0).toLocaleString('es-CL')} km</p>
+   <p><b>Fecha de recepción:</b> {new Date(selected.fecha_recepcion).toLocaleDateString('es-CL')} · <b>Fecha prometida:</b> {selected.fecha_prometida?new Date(selected.fecha_prometida).toLocaleDateString('es-CL'):'Por definir'}</p>
+   <h3 style={{margin:'20px 0 8px'}}>Detalle del presupuesto</h3><table><thead><tr><th>Descripción</th><th>Tipo</th><th>Cantidad</th><th>Precio unitario</th><th>Total</th></tr></thead><tbody>{details.map(d=><tr key={d.id}><td>{d.descripcion}</td><td>{String(d.tipo||'').replaceAll('_',' ')}</td><td>{Number(d.cantidad).toLocaleString('es-CL')}</td><td>{money(Number(d.precio_unitario))}</td><td>{money(Number(d.cantidad)*Number(d.precio_unitario))}</td></tr>)}</tbody></table>
+   <div className="print-total"><span>Subtotal</span><b>{money(Number(selected.subtotal))}</b><span>Descuento</span><b>{money(Number(selected.descuento||0))}</b><span>Impuestos</span><b>{money(Number(selected.impuesto))}</b><strong>Total</strong><strong>{money(Number(selected.total))}</strong></div>
+   <h3 style={{margin:'24px 0 6px'}}>Descripción y condiciones</h3><p><b>Trabajo solicitado:</b> {selected.trabajo_solicitado||'No especificado'}</p><p><b>Diagnóstico:</b> {selected.diagnostico||'Pendiente de diagnóstico'}</p><p className="print-muted">Este presupuesto considera los trabajos y repuestos detallados. Cualquier trabajo adicional o variación de costo deberá ser informado y autorizado por el cliente antes de ejecutarse. Los valores se expresan en pesos chilenos (CLP).</p>
+   <div className="print-signatures"><div>Firma del cliente<br/>Nombre y RUT</div><div>Firma y timbre del taller<br/>{workshop.nombre||'Taller'}</div></div>
+   <p className="print-muted" style={{marginTop:'28px',fontSize:'8pt'}}>Documento generado desde Taller · {new Date().toLocaleString('es-CL')}</p>
+  </div>}
   {error&&<div className="wo-toast error"><AlertTriangle size={15}/>{error}<button onClick={()=>setError('')}><X size={14}/></button></div>}
   {notice&&<div className="wo-toast success"><Check size={15}/>{notice}<button onClick={()=>setNotice('')}><X size={14}/></button></div>}
  </div>
