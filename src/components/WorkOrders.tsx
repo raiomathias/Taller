@@ -129,11 +129,11 @@ export default function WorkOrders({workshop,userId,role,demoMode=false}:Props){
   try{
    if(demoMode){const d=demoRead();const o=d.ordenes_trabajo.find((x:Row)=>x.id===selected.id);Object.assign(o,patch);demoWrite(d)}
    else{const {error}=await supabase.from('ordenes_trabajo').update(patch).eq('id',selected.id).eq('taller_id',workshopId);if(error)throw error}
-   setNotice('Estado de la OT actualizado.');await load();const fresh=demoMode?demoRead().ordenes_trabajo.find((x:Row)=>x.id===selected.id):orders.find(x=>x.id===selected.id);if(fresh)await loadDetail(fresh)
+   setNotice('Estado de la OT actualizado.');await load();const fresh={...selected,...patch};setSelected(fresh);await loadDetail(fresh)
   }catch(e:any){setError(e.message||'No se pudo actualizar el estado.')}
   setSaving(false)
  }
- const sessionName = 'Cliente'
+ const sessionName = team.find(m=>m.usuario_id===userId)?.perfiles?.nombre_completo||'Usuario'
  async function addLine(){
   if(!selected||!line.descripcion?.trim()){setError('Ingresa una descripción.');return}
   const qty=Number(line.cantidad)||1
