@@ -30,7 +30,7 @@ Deno.serve(async(req:Request)=>{
   if(!canEdit)return json({error:"No tienes permiso para emitir presupuestos."},403,cors);
   const [{data:details,error:detailError},{data:client},{data:vehicle},{data:workshop}]=await Promise.all([
    admin.from("ot_detalles").select("tipo,descripcion,cantidad,precio_unitario,total_linea").eq("orden_id",order.id).order("created_at"),
-   admin.from("clientes").select("nombre,rut,email,telefono").eq("id",order.cliente_id).maybeSingle(),
+   admin.from("clientes").select("nombre,rut").eq("id",order.cliente_id).maybeSingle(),
    admin.from("vehiculos").select("patente,marca,modelo,anio,kilometraje").eq("id",order.vehiculo_id).maybeSingle(),
    admin.from("talleres").select("nombre,rut,telefono,email,direccion,ciudad").eq("id",order.taller_id).maybeSingle()
   ]);
