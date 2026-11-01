@@ -62,3 +62,12 @@ La clave incluida es una clave publicable diseñada para clientes web; el acceso
 
 ## Seguridad
 El backend aplica RLS por taller y permisos por rol. Los cambios de stock se ejecutan mediante la función transaccional `registrar_movimiento_stock`, no mediante actualizaciones directas a la tabla de existencias.
+
+
+## Funciones implementadas en Fase 3
+- Emisión de presupuestos imprimibles en formato A4; desde el diálogo de impresión del navegador se pueden guardar como PDF.
+- Enlaces individuales de autorización para clientes, con vigencia de 7 días y revocación automática del enlace anterior al emitir uno nuevo.
+- Portal público de revisión y aceptación/rechazo, con nombre, RUT/documento, consentimiento y fecha de respuesta.
+- La aprobación actualiza el estado de la OT cuando corresponde y ambas acciones quedan registradas en Auditoría.
+- Los tokens se generan aleatoriamente y solo se almacena su hash. La tabla de aprobaciones tiene RLS y no concede acceso directo a anon ni authenticated; la Edge Function valida la sesión y los permisos del taller al emitir enlaces.
+- Versión actual: **0.5.0**.
