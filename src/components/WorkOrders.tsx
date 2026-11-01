@@ -110,12 +110,13 @@ export default function WorkOrders({workshop,userId,role,demoMode=false,permissi
  }
  async function createOrder(){
   if(!form.cliente_id||!form.vehiculo_id){setError('Selecciona cliente y vehículo.');return}
+  if((form.accesorios||[]).includes('Otro')&&!String(form.accesorios_otro||'').split(/\r?\n/).some((x:string)=>x.trim())){setError('Describe al menos un accesorio marcado como Otro.');return}
   setSaving(true);setError('')
   try{
    if(demoMode){
     const d=demoRead();const n=(d.ordenes_trabajo||[]).reduce((a:number,x:Row)=>Math.max(a,Number(x.folio)||0),0)+1
     const damageList=String(form.danos_preexistentes||'').split(/\r?\n/).map((x:string)=>x.trim()).filter(Boolean)
-    const accessories=[...(form.accesorios||[]),...String(form.accesorios_otro||'').split(/\r?\n/).map((x:string)=>x.trim()).filter(Boolean).map((x:string)=>'Otro: '+x)]
+    const accessories=[...(form.accesorios||[]).filter((x:string)=>x!=='Otro'),...String(form.accesorios_otro||'').split(/\r?\n/).map((x:string)=>x.trim()).filter(Boolean).map((x:string)=>'Otro: '+x)]
     const o={id:'demo-ot-'+Date.now(),taller_id:workshopId,folio:n,numero_ot:'OT-'+String(n).padStart(6,'0'),cliente_id:form.cliente_id,vehiculo_id:form.vehiculo_id,estado:'recibida',prioridad:form.prioridad||'normal',fecha_recepcion:isoNow(),fecha_prometida:form.fecha_prometida||null,kilometraje_ingreso:Number(form.kilometraje)||0,sintomas:form.sintomas||'',trabajo_solicitado:form.trabajo_solicitado||'',observaciones_recepcion:form.observaciones_recepcion||'',nivel_combustible:form.nivel_combustible||null,accesorios,danos_preexistentes:damageList,subtotal:0,impuesto:0,total:0,saldo:0}
     d.ordenes_trabajo=[...(d.ordenes_trabajo||[]),o];d.ot_inspecciones=[...(d.ot_inspecciones||[]),{id:'demo-insp-'+Date.now(),orden_id:o.id,etapa:'recepcion',resultado:'pendiente',items:receptionChecklist.map(label=>({label,estado:'pendiente'}))}];demoWrite(d)
    }else{
