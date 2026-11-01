@@ -20,7 +20,7 @@ Si no defines una clave de Supabase, la aplicación inicia automáticamente en m
 ## Conectar Supabase
 Configura:
 - `VITE_SUPABASE_URL`: URL del proyecto (por defecto ya apunta al proyecto Taller).
-- `VITE_SUPABASE_ANON_KEY`: clave publicable/anon del proyecto.
+- `VITE_SUPABASE_PUBLISHABLE_KEY`: clave publicable del proyecto.
 
 Nunca uses `service_role` ni claves secretas en el navegador.
 
@@ -29,12 +29,11 @@ El proyecto se publica en `https://raiomathias.github.io/Taller/`.
 El workflow `.github/workflows/deploy.yml` compila y publica al hacer push a `main`.
 
 Para habilitar datos reales desde Pages:
-1. En GitHub, abre Settings → Secrets and variables → Actions.
-2. Crea el secret `VITE_SUPABASE_ANON_KEY` con la clave publicable de Supabase.
-3. (Opcional) crea la variable `VITE_SUPABASE_URL`; si no existe, se usa la URL del proyecto Taller.
-4. En Settings → Pages, selecciona **GitHub Actions** como fuente de publicación.
+1. En Settings → Pages, selecciona **GitHub Actions** como fuente de publicación.
+2. En Supabase → Authentication → URL Configuration, agrega `https://raiomathias.github.io/Taller/` a las Redirect URLs.
+3. La URL y la clave publicable ya están configuradas en el workflow; no se necesita una clave secreta de Supabase en GitHub.
 
-Sin el secret, la página queda en modo demostración local.
+La clave incluida es una clave publicable diseñada para clientes web; el acceso a los datos sigue protegido por RLS.
 
 ## Funciones disponibles en Fase 1
 - Resumen con indicadores y alertas de stock mínimo.
