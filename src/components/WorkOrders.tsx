@@ -136,19 +136,19 @@ export default function WorkOrders({workshop,userId,role,demoMode=false}:Props){
  const sessionName = 'Cliente'
  async function addLine(){
   if(!selected||!line.descripcion?.trim()){setError('Ingresa una descripción.');return}
+  const qty=Number(line.cantidad)||1
+  const needsStock=['repuesto','insumo'].includes(line.tipo)
+  if(needsStock&&(!line.producto_id||!(line.bodega_id||warehouses[0]?.id))){setError('Selecciona producto y bodega para consumir inventario.');return}
   setSaving(true);setError('')
   try{
-   const qty=Number(line.cantidad)||1;const product=products.find(p=>p.id===line.producto_id)
-   const record={taller_id:workshopId,orden_id:selected.id,tipo:line.tipo,producto_id:line.producto_id||null,bodega_id:line.bodega_id||null,descripcion:line.descripcion||product?.nombre,cantidad:qty,precio_unitario:Number(line.precio_unitario)||0,costo_unitario_historico:Number(product?.costo_unitario)||0,creado_por:userId||null}
-   if(demoMode){const d=demoRead();d.ot_detalles=[...(d.ot_detalles||[]),{...record,id:'demo-det-'+Date.now(),total_linea:qty*record.precio_unitario}];recalcDemo(d,selected.id);demoWrite(d)}
-   else{
-    const {data,error}=await supabase.from('ot_detalles').insert(record).select().single();if(error)throw error
-    if(record.tipo==='repuesto'||record.tipo==='insumo'){
-     if(!record.producto_id||!record.bodega_id)throw new Error('Selecciona producto y bodega para consumir inventario.')
-     const {error:stockError}=await supabase.rpc('registrar_movimiento_stock',{p_taller_id:workshopId,p_producto_id:record.producto_id,p_bodega_id:record.bodega_id,p_tipo:'salida',p_cantidad:qty,p_costo_unitario:record.costo_unitario_historico,p_motivo:'Consumo en '+selected.numero_ot,p_referencia:selected.numero_ot})
-     if(stockError)throw new Error('El detalle quedó registrado, pero el consumo de stock falló: '+stockError.message)
-     const {error:updateError}=await supabase.from('ot_detalles').update({consumido:true,consumido_at:isoNow()}).eq('id',data.id);if(updateError)throw updateError
-    }
+   const product=products.find(p=>p.id===line.producto_id)
+   if(demoMode){
+    const d=demoRead();const p=d.productos?.find((x:Row)=>x.id===line.producto_id)
+    if(needsStock){const stock=p?.stock?.find((x:Row)=>x.bodega_id===(line.bodega_id||warehouses[0]?.id));if(!stock||Number(stock.cantidad)<qty)throw new Error('Stock insuficiente. Disponible: '+Number(stock?.cantidad||0));stock.cantidad=Number(stock.cantidad)-qty;d.movimientos=[...(d.movimientos||[]),{id:'demo-mov-'+Date.now(),created_at:isoNow(),producto_id:p.id,bodega_id:line.bodega_id||warehouses[0]?.id,tipo:'salida',cantidad_delta:-qty,costo_unitario:p.costo_unitario,motivo:'Consumo en '+selected.numero_ot,referencia:selected.numero_ot}]}
+    d.ot_detalles=[...(d.ot_detalles||[]),{id:'demo-det-'+Date.now(),taller_id:workshopId,orden_id:selected.id,tipo:line.tipo,producto_id:line.producto_id||null,bodega_id:line.bodega_id||null,descripcion:line.descripcion||product?.nombre,cantidad:qty,precio_unitario:Number(line.precio_unitario)||0,costo_unitario_historico:Number(product?.costo_unitario)||0,consumido:needsStock,total_linea:qty*(Number(line.precio_unitario)||0)}];recalcDemo(d,selected.id);demoWrite(d)
+   }else{
+    const {error}=await supabase.rpc('agregar_detalle_ot',{p_taller_id:workshopId,p_orden_id:selected.id,p_tipo:line.tipo,p_producto_id:needsStock?line.producto_id:null,p_bodega_id:needsStock?(line.bodega_id||warehouses[0]?.id):null,p_descripcion:line.descripcion||product?.nombre,p_cantidad:qty,p_precio_unitario:Number(line.precio_unitario)||0})
+    if(error)throw error
    }
    setShowLine(false);setLine({tipo:'mano_obra',cantidad:1,precio_unitario:0});setNotice('Detalle agregado a la orden.');await loadDetail(selected);await load()
   }catch(e:any){setError(e.message||'No se pudo agregar el detalle.')}
