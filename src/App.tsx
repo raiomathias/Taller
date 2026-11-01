@@ -119,6 +119,7 @@ export default function App(){
  }
  async function loadSection(){
   if(!workshop)return
+  if(section==='Órdenes de trabajo'){setRows([]);setLoading(false);return}
   setLoading(true);setError('')
   if(demoMode){
    const d=demoData;setLookups(demoLookups(d))
