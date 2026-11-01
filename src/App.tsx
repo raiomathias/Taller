@@ -35,6 +35,8 @@ function demoSeed(){
   proveedores:[{id:'s1',razon_social:'Repuestos del Sur SpA',rut:'76.123.456-7',contacto:'Camila Soto',email:'ventas@example.com',telefono:'+56 9 6123 4567',activo:true},{id:'s2',razon_social:'Lubricantes Patagonia',rut:'77.222.333-4',contacto:'Diego Pérez',email:'pedidos@example.com',telefono:'+56 65 223 9988',activo:true}],
   categorias:[{id:'g1',nombre:'Filtros y lubricantes',tipo:'repuesto',color:'#0ea5e9',activo:true},{id:'g2',nombre:'Insumos de taller',tipo:'insumo',color:'#8b5cf6',activo:true},{id:'g3',nombre:'Herramientas',tipo:'herramienta',color:'#16a34a',activo:true}],
   bodegas:[{id:'b1',nombre:'Bodega principal',ubicacion:'Área de almacenamiento',es_principal:true,activo:true}],
+  taller:{nombre:'Taller Patagonia',rut:'76.555.444-3',telefono:'+56 65 223 4455',email:'contacto@tallerpatagonia.example',direccion:'Av. Presidente Ibáñez 1234',ciudad:'Puerto Montt',zona_horaria:'America/Santiago',moneda:'CLP'},
+  config:{prefijo_ot:'OT',proximo_folio_ot:1,stock_negativo_permitido:false,impuesto_porcentaje:19,tema_preferido:'dark'},
   usuarios:[{id:'u1',usuario_id:'demo-user',rol:'administrador',activo:true}],
   auditoria:[{id:'a1',created_at:today,entidad:'taller',accion:'crear',entidad_id:'demo-taller',usuario_id:'demo-user',detalle:{origen:'datos de demostración'}},{id:'a2',created_at:today,entidad:'productos',accion:'crear',entidad_id:'p1',usuario_id:'demo-user',detalle:{sku:'FIL-001'}}],
   movimientos:[
@@ -125,6 +127,7 @@ export default function App(){
    setLoading(false);return
   }
   const id=workshop.taller_id
+  if(section==='Configuración'){const {data,error}=await supabase.from('configuracion_taller').select('*').eq('taller_id',id).maybeSingle();if(error)setError(error.message);setConfig(data||{prefijo_ot:'OT',proximo_folio_ot:1,stock_negativo_permitido:false,impuesto_porcentaje:19,tema_preferido:'system'});setRows([]);setLoading(false);return}
   const [cats,provs,bods,clients,products]=await Promise.all([
    supabase.from('categorias_productos').select('id,nombre,tipo,activo').eq('taller_id',id).eq('activo',true),
    supabase.from('proveedores').select('id,razon_social,activo').eq('taller_id',id).eq('activo',true),
@@ -187,6 +190,19 @@ export default function App(){
     setModal(false);setNotice('Cambios guardados correctamente.');await loadSection()
    }
   }catch(e:any){setError(e.message||'No se pudo guardar el registro.')}
+  setSaving(false)
+ }
+ async function saveSettings(){
+  if(!workshop)return
+  setSaving(true);setError('');setNotice('')
+  try{
+   const company={nombre:workshopForm.nombre,rut:workshopForm.rut||null,telefono:workshopForm.telefono||null,email:workshopForm.email||null,direccion:workshopForm.direccion||null,ciudad:workshopForm.ciudad||null,zona_horaria:'America/Santiago',moneda:'CLP'}
+   const cfg={prefijo_ot:config.prefijo_ot,proximo_folio_ot:Number(config.proximo_folio_ot)||1,stock_negativo_permitido:Boolean(config.stock_negativo_permitido),impuesto_porcentaje:Number(config.impuesto_porcentaje)||0,tema_preferido:config.tema_preferido}
+   if(demoMode){const d={...demoData,taller:company,config:cfg};persistDemo(d);setWorkshop({...workshop,...company});setConfig(cfg)}
+   else{const a=await supabase.from('talleres').update(company).eq('id',workshop.taller_id);if(a.error)throw a.error;const b=await supabase.from('configuracion_taller').update(cfg).eq('taller_id',workshop.taller_id);if(b.error)throw b.error;await loadWorkshop();setConfig(cfg)}
+   if(cfg.tema_preferido==='light'||cfg.tema_preferido==='dark')setTheme(cfg.tema_preferido)
+   setNotice('Configuración guardada.')
+  }catch(e:any){setError(e.message||'No se pudo guardar la configuración.')}
   setSaving(false)
  }
  async function archive(row:Row){
