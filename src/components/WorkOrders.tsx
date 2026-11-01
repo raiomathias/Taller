@@ -102,7 +102,7 @@ export default function WorkOrders({workshop,userId,role,demoMode=false}:Props){
   const o=d.ordenes_trabajo.find((x:Row)=>x.id===orderId);if(!o)return
   const sub=(d.ot_detalles||[]).filter((x:Row)=>x.orden_id===orderId).reduce((a:number,x:Row)=>a+Number(x.cantidad)*Number(x.precio_unitario),0)
   const paid=(d.ot_pagos||[]).filter((x:Row)=>x.orden_id===orderId).reduce((a:number,x:Row)=>a+Number(x.monto),0)
-  const tax=sub*0.19;o.subtotal=sub;o.impuesto=tax;o.total=sub+tax;o.saldo=Math.max(0,o.total-paid)
+  const tax=sub*(Number(d.config?.impuesto_porcentaje??19)/100);o.subtotal=sub;o.impuesto=tax;o.total=sub+tax;o.saldo=Math.max(0,o.total-paid)
  }
  async function createOrder(){
   if(!form.cliente_id||!form.vehiculo_id){setError('Selecciona cliente y vehículo.');return}
@@ -189,6 +189,7 @@ export default function WorkOrders({workshop,userId,role,demoMode=false}:Props){
   try{if(demoMode){const d=demoRead();d.ot_asignaciones=(d.ot_asignaciones||[]).map((a:Row)=>a.tarea_id===t.id?{...a,activa:false}:a);if(mechanicId)d.ot_asignaciones.push({id:'demo-assign-'+Date.now(),taller_id:workshopId,orden_id:selected.id,tarea_id:t.id,mecanico_id:mechanicId,activa:true});demoWrite(d)}else{const {error}=await supabase.from('ot_asignaciones').update({activa:false}).eq('tarea_id',t.id).eq('activa',true);if(error)throw error;if(mechanicId){const {error:insertError}=await supabase.from('ot_asignaciones').insert({taller_id:workshopId,orden_id:selected.id,tarea_id:t.id,mecanico_id:mechanicId,asignado_por:userId||null});if(insertError)throw insertError}}await loadDetail(selected)}catch(e:any){setError(e.message)}
  }
  async function setTaskState(t:Row,state:string){
+  if(!selected)return
   try{if(demoMode){const d=demoRead();const r=d.ot_tareas.find((x:Row)=>x.id===t.id);r.estado=state;demoWrite(d)}else{const {error}=await supabase.from('ot_tareas').update({estado:state,fecha_inicio:state==='en_progreso'?isoNow():t.fecha_inicio,fecha_termino:state==='completada'?isoNow():null}).eq('id',t.id);if(error)throw error}await loadDetail(selected)}catch(e:any){setError(e.message)}
  }
  async function updateDiagnosis(){
@@ -197,7 +198,7 @@ export default function WorkOrders({workshop,userId,role,demoMode=false}:Props){
   try{if(demoMode){const d=demoRead();Object.assign(d.ordenes_trabajo.find((x:Row)=>x.id===selected.id),{diagnostico:selected.diagnostico});demoWrite(d)}else{const {error}=await supabase.from('ordenes_trabajo').update({diagnostico:selected.diagnostico}).eq('id',selected.id);if(error)throw error}setNotice('Diagnóstico guardado.');await load()}catch(e:any){setError(e.message)}setSaving(false)
  }
  async function toggleInspectionItem(insp:Row,index:number){
-  if(!canOperate)return
+  if(!selected||!canOperate)return
   const items=Array.isArray(insp.items)?[...insp.items]:[]
   if(!items[index])return
   items[index]={...items[index],estado:items[index].estado==='completado'?'pendiente':'completado'}
@@ -268,7 +269,7 @@ export default function WorkOrders({workshop,userId,role,demoMode=false}:Props){
     <div className="wo-tabs">{[['resumen','Resumen'],['trabajos','Trabajos'],['tareas','Tareas'],['pagos','Pagos'],['inspeccion','Inspección'],['archivos','Archivos'],['tiempos','Tiempos']].map(([k,l])=><button key={k} className={tab===k?'active':''} onClick={()=>setTab(k)}>{l}</button>)}</div>
     {tab==='resumen'&&<div className="wo-tab-content">
      <div className="wo-summary-grid"><div><small>Presupuesto total</small><b>{money(selected.total)}</b></div><div><small>Pagado</small><b>{money(totalPaid)}</b></div><div><small>Saldo pendiente</small><b className={Number(selected.saldo)>0?'text-warning':''}>{money(selected.saldo)}</b></div></div>
-     <div className="wo-block"><div className="wo-block-title"><h3>Recepción y diagnóstico</h3><span>{selected.prioridad.toUpperCase()}</span></div><p><b>Solicitud:</b> {selected.trabajo_solicitado||'Sin detalle'}</p><p><b>Síntomas:</b> {selected.sintomas||'Sin detalle'}</p>{canEditOrder?<><label className="wo-field">Diagnóstico técnico<textarea value={selected.diagnostico||''} onChange={e=>setSelected({...selected,diagnostico:e.target.value})} placeholder="Describe las fallas encontradas y las causas…"/></label><button className="secondary" disabled={saving} onClick={()=>void updateDiagnosis()}><Check size={15}/> Guardar diagnóstico</button></>:<p><b>Diagnóstico técnico:</b> {selected.diagnostico||'Pendiente'}</p>}</div>
+     <div className="wo-block"><div className="wo-block-title"><h3>Recepción y diagnóstico</h3><span>{selected.prioridad.toUpperCase()}</span></div><p><b>Solicitud:</b> {selected.trabajo_solicitado||'Sin detalle'}</p><p><b>Síntomas:</b> {selected.sintomas||'Sin detalle'}</p>{canEditOrder?<><label className="wo-field">Diagnóstico técnico<textarea value={selected.diagnostico||''} onChange={e=>setSelected(current=>current?{...current,diagnostico:e.target.value}:current)} placeholder="Describe las fallas encontradas y las causas…"/></label><button className="secondary" disabled={saving} onClick={()=>void updateDiagnosis()}><Check size={15}/> Guardar diagnóstico</button></>:<p><b>Diagnóstico técnico:</b> {selected.diagnostico||'Pendiente'}</p>}</div>
      <div className="wo-block"><div className="wo-block-title"><h3>Fechas</h3><CalendarClock size={17}/></div><p>Recepción: {new Date(selected.fecha_recepcion).toLocaleString('es-CL')}</p><p>Prometida: {selected.fecha_prometida?new Date(selected.fecha_prometida).toLocaleString('es-CL'):'No definida'}</p><p>Inicio: {selected.fecha_inicio?new Date(selected.fecha_inicio).toLocaleString('es-CL'):'Pendiente'} · Término: {selected.fecha_termino?new Date(selected.fecha_termino).toLocaleString('es-CL'):'Pendiente'}</p></div>
     </div>}
     {tab==='trabajos'&&<div className="wo-tab-content"><div className="wo-block-title"><h3>Repuestos, insumos y mano de obra</h3>{canEditOrder&&<button className="primary small" onClick={()=>{setLine({tipo:'mano_obra',cantidad:1,precio_unitario:0});setShowLine(true)}}><Plus size={14}/> Agregar detalle</button>}</div>{details.length===0?<p className="muted">Aún no hay detalles.</p>:<div className="wo-lines">{details.map(d=><div className="wo-line" key={d.id}><div><b>{d.descripcion}</b><small>{d.tipo.replace('_',' ')} · {d.cantidad} × {money(d.precio_unitario)} {d.consumido?'· Stock consumido':''}</small></div><strong>{money(Number(d.cantidad)*Number(d.precio_unitario))}</strong></div>)}</div>}<div className="wo-total"><span>Subtotal</span><b>{money(selected.subtotal)}</b><span>Impuestos</span><b>{money(selected.impuesto)}</b><span>Total</span><b>{money(selected.total)}</b></div></div>}
