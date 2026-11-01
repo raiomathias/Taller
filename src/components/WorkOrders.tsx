@@ -43,6 +43,8 @@ export default function WorkOrders({workshop,userId,role,demoMode=false,permissi
  const [showPayment,setShowPayment]=useState(false)
  const [showTask,setShowTask]=useState(false)
  const [tab,setTab]=useState('resumen')
+ const [approvalUrl,setApprovalUrl]=useState('')
+ const [printingBudget,setPrintingBudget]=useState(false)
  const [form,setForm]=useState<Row>({prioridad:'normal',kilometraje:0})
  const [line,setLine]=useState<Row>({tipo:'mano_obra',cantidad:1,precio_unitario:0})
  const [payment,setPayment]=useState<Row>({metodo:'transferencia',monto:''})
@@ -53,6 +55,8 @@ export default function WorkOrders({workshop,userId,role,demoMode=false,permissi
  const canAssign = ['administrador','gerente','jefe_taller'].includes(role) && canEditOrder
  const canCharge = ['administrador','gerente','recepcionista','administracion'].includes(role) && permissions?.edit!==false && permissions?.view!==false
  const workshopId = workshop?.taller_id || workshop?.id
+
+ useEffect(()=>{if(!printingBudget)return;const timer=window.setTimeout(()=>window.print(),250);const afterPrint=()=>setPrintingBudget(false);window.addEventListener('afterprint',afterPrint);return()=>{window.clearTimeout(timer);window.removeEventListener('afterprint',afterPrint)}},[printingBudget])
 
  const load = useCallback(async()=>{
   setLoading(true);setError('')
@@ -81,7 +85,7 @@ export default function WorkOrders({workshop,userId,role,demoMode=false,permissi
  },[demoMode,workshopId])
 
  const loadDetail = useCallback(async(order:Row)=>{
-  setSelected(order);setTab('resumen')
+  setSelected(order);setTab('resumen');setApprovalUrl('')
   if(demoMode){
    const d=demoRead();setDetails((d.ot_detalles||[]).filter((x:Row)=>x.orden_id===order.id));setTasks((d.ot_tareas||[]).filter((x:Row)=>x.orden_id===order.id));setAssignments((d.ot_asignaciones||[]).filter((x:Row)=>x.orden_id===order.id));setPayments((d.ot_pagos||[]).filter((x:Row)=>x.orden_id===order.id));setInspections((d.ot_inspecciones||[]).filter((x:Row)=>x.orden_id===order.id));setAttachments((d.ot_adjuntos||[]).filter((x:Row)=>x.orden_id===order.id));setTimes((d.ot_tiempos||[]).filter((x:Row)=>x.orden_id===order.id));return
   }
