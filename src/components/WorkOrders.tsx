@@ -51,7 +51,7 @@ export default function WorkOrders({workshop,userId,role,demoMode=false,permissi
  const canOperate = ['administrador','gerente','jefe_taller','mecanico','recepcionista','administracion'].includes(role) && permissions?.view!==false
  const canEditOrder = permissions?.edit ?? rolesEdit.includes(role)
  const canAssign = ['administrador','gerente','jefe_taller'].includes(role) && canEditOrder
- const canCharge = ['administrador','gerente','recepcionista','administracion'].includes(role) && permissions?.view!==false
+ const canCharge = ['administrador','gerente','recepcionista','administracion'].includes(role) && permissions?.edit!==false && permissions?.view!==false
  const workshopId = workshop?.taller_id || workshop?.id
 
  const load = useCallback(async()=>{
