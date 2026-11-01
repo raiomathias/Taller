@@ -1,0 +1,50 @@
+
+-- Endurecimiento por rol de las políticas de órdenes de trabajo.
+drop policy if exists ordenes_trabajo_insert on public.ordenes_trabajo;
+drop policy if exists ordenes_trabajo_update on public.ordenes_trabajo;
+drop policy if exists ordenes_trabajo_delete on public.ordenes_trabajo;
+revoke insert,delete on public.ordenes_trabajo from authenticated;
+grant select,update on public.ordenes_trabajo to authenticated;
+create policy ordenes_trabajo_update on public.ordenes_trabajo for update to authenticated using(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller','recepcionista','administracion'])) with check(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller','recepcionista','administracion']));
+create policy ordenes_trabajo_delete on public.ordenes_trabajo for delete to authenticated using(private.tiene_rol_taller(taller_id,array['administrador','gerente']));
+drop policy if exists ot_detalles_insert on public.ot_detalles;drop policy if exists ot_detalles_update on public.ot_detalles;drop policy if exists ot_detalles_delete on public.ot_detalles;
+create policy ot_detalles_insert on public.ot_detalles for insert to authenticated with check(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller','recepcionista','administracion']));
+create policy ot_detalles_update on public.ot_detalles for update to authenticated using(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller','recepcionista','administracion'])) with check(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller','recepcionista','administracion']));
+create policy ot_detalles_delete on public.ot_detalles for delete to authenticated using(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller']));
+drop policy if exists ot_tareas_insert on public.ot_tareas;drop policy if exists ot_tareas_update on public.ot_tareas;drop policy if exists ot_tareas_delete on public.ot_tareas;
+create policy ot_tareas_insert on public.ot_tareas for insert to authenticated with check(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller','mecanico']));
+create policy ot_tareas_update on public.ot_tareas for update to authenticated using(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller','mecanico'])) with check(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller','mecanico']));
+create policy ot_tareas_delete on public.ot_tareas for delete to authenticated using(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller']));
+drop policy if exists ot_asignaciones_insert on public.ot_asignaciones;drop policy if exists ot_asignaciones_update on public.ot_asignaciones;drop policy if exists ot_asignaciones_delete on public.ot_asignaciones;
+create policy ot_asignaciones_insert on public.ot_asignaciones for insert to authenticated with check(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller']));
+create policy ot_asignaciones_update on public.ot_asignaciones for update to authenticated using(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller'])) with check(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller']));
+create policy ot_asignaciones_delete on public.ot_asignaciones for delete to authenticated using(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller']));
+drop policy if exists ot_tiempos_insert on public.ot_tiempos;drop policy if exists ot_tiempos_update on public.ot_tiempos;drop policy if exists ot_tiempos_delete on public.ot_tiempos;
+create policy ot_tiempos_insert on public.ot_tiempos for insert to authenticated with check(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller','mecanico']) and (mecanico_id=(select auth.uid()) or private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller'])));
+create policy ot_tiempos_update on public.ot_tiempos for update to authenticated using(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller']) or (mecanico_id=(select auth.uid()) and private.tiene_rol_taller(taller_id,array['mecanico']))) with check(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller']) or (mecanico_id=(select auth.uid()) and private.tiene_rol_taller(taller_id,array['mecanico'])));
+create policy ot_tiempos_delete on public.ot_tiempos for delete to authenticated using(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller']));
+drop policy if exists ot_inspecciones_insert on public.ot_inspecciones;drop policy if exists ot_inspecciones_update on public.ot_inspecciones;drop policy if exists ot_inspecciones_delete on public.ot_inspecciones;
+create policy ot_inspecciones_insert on public.ot_inspecciones for insert to authenticated with check(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller','recepcionista','mecanico']));
+create policy ot_inspecciones_update on public.ot_inspecciones for update to authenticated using(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller','recepcionista','mecanico'])) with check(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller','recepcionista','mecanico']));
+create policy ot_inspecciones_delete on public.ot_inspecciones for delete to authenticated using(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller']));
+drop policy if exists ot_pagos_insert on public.ot_pagos;drop policy if exists ot_pagos_update on public.ot_pagos;drop policy if exists ot_pagos_delete on public.ot_pagos;
+create policy ot_pagos_insert on public.ot_pagos for insert to authenticated with check(private.tiene_rol_taller(taller_id,array['administrador','gerente','recepcionista','administracion']));
+create policy ot_pagos_update on public.ot_pagos for update to authenticated using(private.tiene_rol_taller(taller_id,array['administrador','gerente','administracion'])) with check(private.tiene_rol_taller(taller_id,array['administrador','gerente','administracion']));
+create policy ot_pagos_delete on public.ot_pagos for delete to authenticated using(private.tiene_rol_taller(taller_id,array['administrador','gerente']));
+drop policy if exists ot_adjuntos_insert on public.ot_adjuntos;drop policy if exists ot_adjuntos_update on public.ot_adjuntos;drop policy if exists ot_adjuntos_delete on public.ot_adjuntos;
+create policy ot_adjuntos_insert on public.ot_adjuntos for insert to authenticated with check(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller','recepcionista','mecanico']));
+create policy ot_adjuntos_update on public.ot_adjuntos for update to authenticated using(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller','recepcionista','mecanico'])) with check(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller','recepcionista','mecanico']));
+create policy ot_adjuntos_delete on public.ot_adjuntos for delete to authenticated using(private.tiene_rol_taller(taller_id,array['administrador','gerente','jefe_taller']));
+create or replace function private.ot_validar_pago() returns trigger language plpgsql security definer set search_path='' as $$
+declare v_total numeric;v_pagado numeric;v_taller uuid;
+begin
+ select total,taller_id into v_total,v_taller from public.ordenes_trabajo where id=new.orden_id for update;
+ if v_total is null then raise exception 'Orden no encontrada.';end if;
+ if not private.tiene_rol_taller(v_taller,array['administrador','gerente','recepcionista','administracion']) then raise exception 'No tienes permiso para registrar pagos.' using errcode='42501';end if;
+ select coalesce(sum(monto),0) into v_pagado from public.ot_pagos where orden_id=new.orden_id and id is distinct from new.id;
+ if new.monto>greatest(v_total-v_pagado,0) then raise exception 'El pago supera el saldo pendiente.' using errcode='23514';end if;
+ return new;
+end;$$;
+revoke all on function private.ot_validar_pago() from public,anon,authenticated;
+drop trigger if exists ot_validar_pago_trg on public.ot_pagos;
+create trigger ot_validar_pago_trg before insert or update on public.ot_pagos for each row execute function private.ot_validar_pago();
