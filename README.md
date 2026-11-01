@@ -71,3 +71,9 @@ El backend aplica RLS por taller y permisos por rol. Los cambios de stock se eje
 - La aprobación actualiza el estado de la OT cuando corresponde y ambas acciones quedan registradas en Auditoría.
 - Los tokens se generan aleatoriamente y solo se almacena su hash. La tabla de aprobaciones tiene RLS y no concede acceso directo a anon ni authenticated; la Edge Function valida la sesión y los permisos del taller al emitir enlaces.
 - Versión actual: **0.5.0**.
+
+
+## Versión 0.5.1
+
+- Corrige la edición de registros para no enviar campos de perfil (`nombre_completo` y `perfiles`) a tablas que no los contienen, especialmente proveedores.
+- Refuerza la limpieza del payload antes de guardar registros generales.
