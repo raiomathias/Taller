@@ -22,7 +22,7 @@ Deno.serve(async (req: Request) => {
   const authClient = createClient(url, anon, { auth: { persistSession: false } });
   const { data: authData, error: authError } = await authClient.auth.getUser(token);
   if (authError || !authData.user) return response({ error: "Sesión inválida." }, 401);
-  let body: { taller_id?: string; nombre_completo?: string; email?: string; rol?: string };
+  let body: { action?: string; taller_id?: string; membership_id?: string; nombre_completo?: string; email?: string; rol?: string; activo?: boolean };
   try { body = await req.json(); } catch { return response({ error: "Solicitud inválida." }, 400); }
   const name = (body.nombre_completo || "").trim().replace(/\s+/g, " ");
   const email = (body.email || "").trim().toLowerCase();
@@ -37,6 +37,19 @@ Deno.serve(async (req: Request) => {
   if (memberError || !membership || !["administrador", "gerente"].includes(membership.rol)) {
     return response({ error: "No tienes permisos para invitar usuarios a este taller." }, 403);
   }
+  const action = body.action || "invite";
+  if (action === "update") {
+    if (!body.membership_id || name.length < 3 || !allowed.includes(role)) return response({ error: "Datos de usuario inválidos." }, 400);
+    if (membership.rol === "gerente" && ["administrador", "gerente"].includes(role)) return response({ error: "Solo un administrador puede asignar roles de administración o gerencia." }, 403);
+    const { data: target, error: targetError } = await admin.from("usuarios_taller").select("usuario_id").eq("id", body.membership_id).eq("taller_id", body.taller_id).maybeSingle();
+    if (targetError || !target) return response({ error: "No se encontró la membresía indicada." }, 404);
+    const { error: profileUpdateError } = await admin.from("perfiles").upsert({ id: target.usuario_id, nombre_completo: name }, { onConflict: "id" });
+    if (profileUpdateError) return response({ error: "No se pudo actualizar el nombre: " + profileUpdateError.message }, 400);
+    const { error: membershipUpdateError } = await admin.from("usuarios_taller").update({ rol: role, activo: body.activo !== false }).eq("id", body.membership_id).eq("taller_id", body.taller_id);
+    if (membershipUpdateError) return response({ error: membershipUpdateError.message }, 400);
+    return response({ ok: true, message: "Usuario actualizado.", user: { nombre_completo: name, rol: role, activo: body.activo !== false } });
+  }
+  if (action !== "invite") return response({ error: "Acción no válida." }, 400);
   if (membership.rol === "gerente" && ["administrador", "gerente"].includes(role)) {
     return response({ error: "Solo un administrador puede asignar roles de administración o gerencia." }, 403);
   }
