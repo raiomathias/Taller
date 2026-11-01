@@ -68,7 +68,8 @@ function displayValue(row:Row,key:string,lookups:Row){
  if(key==='bodega_id')return lookups.bodegas?.find((x:Row)=>x.id===row[key])?.nombre||row[key]
  if(key==='categoria_id')return lookups.categorias?.find((x:Row)=>x.id===row[key])?.nombre||'—'
  if(key==='proveedor_principal_id')return lookups.proveedores?.find((x:Row)=>x.id===row[key])?.razon_social||'—'
- if(key==='created_at')return row[key]?new Date(row[key]).toLocaleString('es-CL'):'—'\n if(key==='detalle')return row[key]?JSON.stringify(row[key]):'—'
+ if(key==='created_at')return row[key]?new Date(row[key]).toLocaleString('es-CL'):'—'
+ if(key==='detalle')return row[key]?JSON.stringify(row[key]):'—'
  if(key==='costo_unitario'||key==='precio_venta')return money(row[key])
  if(typeof row[key]==='boolean')return row[key]?'Sí':'No'
  return row[key]??'—'
