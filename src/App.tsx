@@ -195,7 +195,7 @@ export default function App(){
  }
  async function authenticate(){
   setSaving(true);setError('')
-  const r=loginMode==='login'?await supabase.auth.signInWithPassword({email:credentials.email,password:credentials.password}):await supabase.auth.signUp({email:credentials.email,password:credentials.password,options:{data:{nombre_completo:credentials.name}}})
+  const r=loginMode==='login'?await supabase.auth.signInWithPassword({email:credentials.email,password:credentials.password}):await supabase.auth.signUp({email:credentials.email,password:credentials.password,options:{data:{nombre_completo:credentials.name},emailRedirectTo:`${window.location.origin}/Taller/`}})
   if(r.error)setError(r.error.message);else if(loginMode==='signup'&&!r.data.session)setError('Cuenta creada. Revisa tu correo si la confirmación está habilitada.')
   setSaving(false)
  }
