@@ -1,0 +1,12 @@
+-- Auditoría de cambios de órdenes de trabajo y sus componentes.
+do $$
+begin
+ if not exists(select 1 from pg_trigger where tgname='ot_auditoria_orden_update_delete' and tgrelid='public.ordenes_trabajo'::regclass) then create trigger ot_auditoria_orden_update_delete after update or delete on public.ordenes_trabajo for each row execute function private.registrar_auditoria_fase1(); end if;
+ if not exists(select 1 from pg_trigger where tgname='ot_auditoria_detalles_update_delete' and tgrelid='public.ot_detalles'::regclass) then create trigger ot_auditoria_detalles_update_delete after update or delete on public.ot_detalles for each row execute function private.registrar_auditoria_fase1(); end if;
+ if not exists(select 1 from pg_trigger where tgname='ot_auditoria_tareas' and tgrelid='public.ot_tareas'::regclass) then create trigger ot_auditoria_tareas after insert or update or delete on public.ot_tareas for each row execute function private.registrar_auditoria_fase1(); end if;
+ if not exists(select 1 from pg_trigger where tgname='ot_auditoria_asignaciones' and tgrelid='public.ot_asignaciones'::regclass) then create trigger ot_auditoria_asignaciones after insert or update or delete on public.ot_asignaciones for each row execute function private.registrar_auditoria_fase1(); end if;
+ if not exists(select 1 from pg_trigger where tgname='ot_auditoria_tiempos' and tgrelid='public.ot_tiempos'::regclass) then create trigger ot_auditoria_tiempos after insert or update or delete on public.ot_tiempos for each row execute function private.registrar_auditoria_fase1(); end if;
+ if not exists(select 1 from pg_trigger where tgname='ot_auditoria_inspecciones' and tgrelid='public.ot_inspecciones'::regclass) then create trigger ot_auditoria_inspecciones after insert or update or delete on public.ot_inspecciones for each row execute function private.registrar_auditoria_fase1(); end if;
+ if not exists(select 1 from pg_trigger where tgname='ot_auditoria_pagos' and tgrelid='public.ot_pagos'::regclass) then create trigger ot_auditoria_pagos after insert or update or delete on public.ot_pagos for each row execute function private.registrar_auditoria_fase1(); end if;
+ if not exists(select 1 from pg_trigger where tgname='ot_auditoria_adjuntos' and tgrelid='public.ot_adjuntos'::regclass) then create trigger ot_auditoria_adjuntos after insert or update or delete on public.ot_adjuntos for each row execute function private.registrar_auditoria_fase1(); end if;
+end $$;
