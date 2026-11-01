@@ -148,7 +148,7 @@ export default function App(){
   }
   setLoading(false)
  }
- function openNew(){setEditing(null);setForm(section==='Movimientos'?{tipo:'entrada',cantidad:1,costo_unitario:0,motivo:'',producto_id:lookups.productos?.[0]?.id,bodega_id:lookups.bodegas?.[0]?.id}:section==='Inventario'?{tipo:'repuesto',unidad:'unidad',costo_unitario:0,precio_venta:0,stock_minimo:0,controla_stock:'true'}:section==='Clientes'?{tipo_persona:'natural'}:{});setModal(true)}
+ function openNew(){setEditing(null);setForm(section==='Movimientos'?{tipo:'entrada',cantidad:1,costo_unitario:0,motivo:'',producto_id:lookups.productos?.[0]?.id,bodega_id:lookups.bodegas?.[0]?.id}:section==='Inventario'?{tipo:'repuesto',unidad:'unidad',costo_unitario:0,precio_venta:0,stock_minimo:0,controla_stock:'true'}:section==='Clientes'?{tipo_persona:'natural'}:section==='Vehículos'?{cliente_id:lookups.clientes?.[0]?.id,kilometraje:0}:section==='Categorías'?{tipo:'repuesto',color:'#64748b'}:section==='Bodegas'?{es_principal:'false'}:section==='Usuarios'?{rol:'mecanico',activo:'true'}:{});setModal(true)}
  function openEdit(row:Row){setEditing(row);setForm({...row});setModal(true)}
  async function saveRecord(){
   if(!workshop)return
