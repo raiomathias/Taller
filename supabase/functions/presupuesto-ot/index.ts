@@ -23,6 +23,7 @@ Deno.serve(async(req:Request)=>{
   if(!body.order_id)return json({error:"Falta la orden de trabajo."},400,cors);
   const {data:order,error:orderError}=await admin.from("ordenes_trabajo").select("id,taller_id,numero_ot,cliente_id,vehiculo_id,estado,fecha_recepcion,fecha_prometida,trabajo_solicitado,diagnostico,subtotal,descuento,impuesto,total").eq("id",body.order_id).maybeSingle();
   if(orderError||!order)return json({error:"No se encontró la orden."},404,cors);
+  if(["cancelada","entregada"].includes(order.estado))return json({error:"No se puede emitir un presupuesto para una OT cancelada o entregada."},409,cors);
   const {data:member,error:memberError}=await admin.from("usuarios_taller").select("rol").eq("taller_id",order.taller_id).eq("usuario_id",userData.user.id).eq("activo",true).maybeSingle();
   if(memberError||!member)return json({error:"No perteneces a este taller."},403,cors);
   let canEdit=["administrador","gerente"].includes(member.rol);
