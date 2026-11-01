@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Activity, AlertTriangle, ArrowDownToLine, Boxes, CarFront, Check, ChevronDown, Command, LayoutDashboard, LogOut, Moon, Package, Plus, Search, Sun, Users, Warehouse, Wrench, X, Pencil, Trash2, RefreshCw, Tags, Truck, History, CircleDollarSign } from 'lucide-react'
+import { Activity, AlertTriangle, ArrowDownToLine, ClipboardList, Boxes, CarFront, Check, ChevronDown, Command, LayoutDashboard, LogOut, Moon, Package, Plus, Search, Sun, Users, Warehouse, Wrench, X, Pencil, Trash2, RefreshCw, Tags, Truck, History, CircleDollarSign } from 'lucide-react'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 
 type Section = 'Resumen'|'Inventario'|'Clientes'|'Vehículos'|'Proveedores'|'Categorías'|'Bodegas'|'Movimientos'|'Usuarios'|'Auditoría'
@@ -45,7 +45,7 @@ function demoSeed(){
 function loadDemo(){try{const raw=localStorage.getItem(demoKey);if(raw)return JSON.parse(raw)}catch{}const seed=demoSeed();localStorage.setItem(demoKey,JSON.stringify(seed));return seed}
 function saveDemo(data:Row){localStorage.setItem(demoKey,JSON.stringify(data))}
 function tableName(s:Section){return ({Inventario:'productos',Clientes:'clientes',Vehículos:'vehiculos',Proveedores:'proveedores',Categorías:'categorias_productos',Bodegas:'bodegas',Movimientos:'movimientos_stock',Usuarios:'usuarios_taller',Auditoría:'auditoria'} as Record<string,string>)[s]||''}
-function titleFor(s:Section){return ({Inventario:'Producto',Clientes:'Cliente',Vehículos:'Vehículo',Proveedores:'Proveedor',Categorías:'Categoría',Bodegas:'Bodega',Movimientos:'Movimiento de inventario'} as Record<string,string>)[s]||'Registro'}
+function titleFor(s:Section){return ({Inventario:'Producto',Clientes:'Cliente',Vehículos:'Vehículo',Proveedores:'Proveedor',Categorías:'Categoría',Bodegas:'Bodega',Movimientos:'Movimiento de inventario',Usuarios:'Usuario'} as Record<string,string>)[s]||'Registro'}
 function fieldsFor(s:Section,lookups:Row):Field[]{
  const f:Record<string,Field[]> = {
  Inventario:[{key:'nombre',label:'Nombre del producto',wide:true,required:true},{key:'sku',label:'SKU'},{key:'codigo_barras',label:'Código de barras'},{key:'marca',label:'Marca'},{key:'modelo_compatible',label:'Modelo compatible'},{key:'tipo',label:'Tipo',options:['repuesto','insumo','herramienta','equipo','servicio','otro']},{key:'unidad',label:'Unidad',options:['unidad','litro','metro','kg','gramo','juego','caja','par']},{key:'categoria_id',label:'Categoría',options:['',...(lookups.categorias||[]).map((x:Row)=>x.id)]},{key:'proveedor_principal_id',label:'Proveedor principal',options:['',...(lookups.proveedores||[]).map((x:Row)=>x.id)]},{key:'costo_unitario',label:'Costo unitario (CLP)',type:'number'},{key:'precio_venta',label:'Precio de venta (CLP)',type:'number'},{key:'stock_minimo',label:'Stock mínimo',type:'number'},{key:'stock_maximo',label:'Stock máximo',type:'number'},{key:'controla_stock',label:'Controla stock',options:['true','false']}],
@@ -65,7 +65,7 @@ function displayValue(row:Row,key:string,lookups:Row){
  if(key==='bodega_id')return lookups.bodegas?.find((x:Row)=>x.id===row[key])?.nombre||row[key]
  if(key==='categoria_id')return lookups.categorias?.find((x:Row)=>x.id===row[key])?.nombre||'—'
  if(key==='proveedor_principal_id')return lookups.proveedores?.find((x:Row)=>x.id===row[key])?.razon_social||'—'
- if(key==='created_at')return row[key]?new Date(row[key]).toLocaleString('es-CL'):'—'\n if(key==='detalle')return row[key]?JSON.stringify(row[key]):'—'
+ if(key==='created_at')return row[key]?new Date(row[key]).toLocaleString('es-CL'):'—'\n if(key==='detalle')return row[key]?JSON.stringify(row[key]):'—'\n if(key==='detalle')return row[key]?JSON.stringify(row[key]):'—'
  if(key==='costo_unitario'||key==='precio_venta')return money(row[key])
  if(typeof row[key]==='boolean')return row[key]?'Sí':'No'
  return row[key]??'—'
