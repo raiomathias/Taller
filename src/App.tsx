@@ -201,9 +201,9 @@ export default function App(){
      if(error)throw error
      if(data?.error)throw new Error(data.error)
     }else if(section==='Usuarios'&&editing){
-     const {error}=await supabase.from('usuarios_taller').update({rol:form.rol,activo:form.activo==='true'||form.activo===true}).eq('id',editing.id).eq('taller_id',workshop.taller_id)
+     const {data,error}=await supabase.functions.invoke('invitar-usuario',{body:{action:'update',taller_id:workshop.taller_id,membership_id:editing.id,nombre_completo:form.nombre_completo,rol:form.rol,activo:form.activo==='true'||form.activo===true}})
      if(error)throw error
-     if(form.nombre_completo&&form.nombre_completo!==editing.perfiles?.nombre_completo){const profile=await supabase.from('perfiles').update({nombre_completo:form.nombre_completo}).eq('id',editing.usuario_id);if(profile.error)throw profile.error}
+     if(data?.error)throw new Error(data.error)
     }else if(section==='Catálogo de trabajos'){
      const payload={taller_id:workshop.taller_id,nombre:form.nombre,descripcion:form.descripcion||null,precio:Number(form.precio)||0,estado:form.estado||'aprobado',creado_por:session.user.id,revisado_por:form.estado==='aprobado'?session.user.id:null,revisado_at:form.estado==='aprobado'?new Date().toISOString():null}
      const result=editing?await supabase.from('servicios_taller').update(payload).eq('id',editing.id):await supabase.from('servicios_taller').insert(payload)
