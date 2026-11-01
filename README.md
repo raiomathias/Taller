@@ -1,6 +1,6 @@
 # Taller — sistema de gestión de talleres mecánicos
 
-Aplicación web para administrar inventario, clientes, vehículos, proveedores y bodegas. La Fase 1 incluye un entorno de demostración local y conexión opcional al backend Supabase.
+Aplicación web para administrar talleres mecánicos. Incluye inventario, clientes, vehículos y órdenes de trabajo con un entorno de demostración local y conexión a Supabase.
 
 ## Stack
 - React 19, TypeScript y Vite
@@ -36,6 +36,7 @@ Para habilitar datos reales desde Pages:
 La clave incluida es una clave publicable diseñada para clientes web; el acceso a los datos sigue protegido por RLS.
 
 ## Funciones disponibles en Fase 1
+
 - Resumen con indicadores, valorización y alertas de stock mínimo.
 - Configuración del taller, zona horaria, parámetros OT, impuesto y política de stock negativo.
 - Catálogo de repuestos, insumos, herramientas y equipos.
@@ -47,6 +48,17 @@ La clave incluida es una clave publicable diseñada para clientes web; el acceso
 - Kardex de movimientos.
 - Edición y desactivación de registros.
 - Navegación por mouse y teclado (Ctrl/Cmd+K, Ctrl/Cmd+N y Escape).
+
+## Funciones implementadas en Fase 2
+- Recepción de vehículos y creación de OT con folio consecutivo seguro por taller.
+- Seguimiento del ciclo de trabajo: recibida, diagnóstico, presupuesto, autorización, reparación, control de calidad y entrega.
+- Diagnóstico técnico y prioridad de atención.
+- Detalles de mano de obra, repuestos, insumos y servicios.
+- Consumo de inventario vinculado a la OT mediante operación transaccional; respeta la política de stock negativo.
+- Tareas de reparación, asignación de mecánicos y registro de tiempos.
+- Registro de pagos parciales, saldo y cálculo automático de impuestos.
+- Checklists de recepción y calidad, y almacenamiento privado de fotografías/documentos.
+- Historial de órdenes asociado a cada vehículo.
 
 ## Seguridad
 El backend aplica RLS por taller y permisos por rol. Los cambios de stock se ejecutan mediante la función transaccional `registrar_movimiento_stock`, no mediante actualizaciones directas a la tabla de existencias.
