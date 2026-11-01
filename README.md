@@ -36,12 +36,13 @@ Para habilitar datos reales desde Pages:
 La clave incluida es una clave publicable diseñada para clientes web; el acceso a los datos sigue protegido por RLS.
 
 ## Funciones disponibles en Fase 1
-- Resumen con indicadores y alertas de stock mínimo.
+- Resumen con indicadores, valorización y alertas de stock mínimo.
+- Configuración del taller, zona horaria, parámetros OT, impuesto y política de stock negativo.
 - Catálogo de repuestos, insumos, herramientas y equipos.
 - Categorías, proveedores y bodegas.
 - Fichas de clientes y vehículos.
-- Gestión de usuarios del taller y roles.
-- Consulta de auditoría para administración y gerencia.
+- Gestión de membresías y asignación de roles a usuarios existentes de Supabase (por UUID).
+- Auditoría automática de cambios de catálogo, clientes, vehículos, proveedores, bodegas, usuarios y configuración.
 - Movimientos de entrada, salida y ajuste con validación de stock.
 - Kardex de movimientos.
 - Edición y desactivación de registros.
