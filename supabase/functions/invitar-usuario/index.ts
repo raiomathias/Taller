@@ -55,6 +55,6 @@ Deno.serve(async (req: Request) => {
   const membershipWrite = existing
     ? await admin.from("usuarios_taller").update({ rol: role, activo: true }).eq("id", existing.id)
     : await admin.from("usuarios_taller").insert({ taller_id: body.taller_id, usuario_id: userId, rol: role, activo: true });
-  if (membershipWrite.error) return response({ error: "Usuario invitado, pero no se pudo asignar al taller: " + membershipWrite.error.message, user_id: userId }, 500);
+  if (membershipWrite.error) return response({ error: "Usuario invitado, pero no se pudo asignar al taller: " + membershipWrite.error.message }, 500);
   return response({ ok: true, message: "Invitación enviada.", user: { nombre_completo: name, email, rol: role } });
 });
