@@ -180,7 +180,11 @@ export default function WorkOrders({workshop,userId,role,demoMode=false}:Props){
   }catch(e:any){setError(e.message||'No se pudo agregar la tarea.')}
   setSaving(false)
  }
- async function assignTask(t:Row,mechanicId:string){\n  if(!selected||!canAssign)return\n  try{if(demoMode){const d=demoRead();d.ot_asignaciones=(d.ot_asignaciones||[]).map((a:Row)=>a.tarea_id===t.id?{...a,activa:false}:a);if(mechanicId)d.ot_asignaciones.push({id:'demo-assign-'+Date.now(),taller_id:workshopId,orden_id:selected.id,tarea_id:t.id,mecanico_id:mechanicId,activa:true});demoWrite(d)}else{const {error}=await supabase.from('ot_asignaciones').update({activa:false}).eq('tarea_id',t.id).eq('activa',true);if(error)throw error;if(mechanicId){const {error:insertError}=await supabase.from('ot_asignaciones').insert({taller_id:workshopId,orden_id:selected.id,tarea_id:t.id,mecanico_id:mechanicId,asignado_por:userId||null});if(insertError)throw insertError}}await loadDetail(selected)}catch(e:any){setError(e.message)}\n }\n async function setTaskState(t:Row,state:string){
+ async function assignTask(t:Row,mechanicId:string){
+  if(!selected||!canAssign)return
+  try{if(demoMode){const d=demoRead();d.ot_asignaciones=(d.ot_asignaciones||[]).map((a:Row)=>a.tarea_id===t.id?{...a,activa:false}:a);if(mechanicId)d.ot_asignaciones.push({id:'demo-assign-'+Date.now(),taller_id:workshopId,orden_id:selected.id,tarea_id:t.id,mecanico_id:mechanicId,activa:true});demoWrite(d)}else{const {error}=await supabase.from('ot_asignaciones').update({activa:false}).eq('tarea_id',t.id).eq('activa',true);if(error)throw error;if(mechanicId){const {error:insertError}=await supabase.from('ot_asignaciones').insert({taller_id:workshopId,orden_id:selected.id,tarea_id:t.id,mecanico_id:mechanicId,asignado_por:userId||null});if(insertError)throw insertError}}await loadDetail(selected)}catch(e:any){setError(e.message)}
+ }
+ async function setTaskState(t:Row,state:string){
   try{if(demoMode){const d=demoRead();const r=d.ot_tareas.find((x:Row)=>x.id===t.id);r.estado=state;demoWrite(d)}else{const {error}=await supabase.from('ot_tareas').update({estado:state,fecha_inicio:state==='en_progreso'?isoNow():t.fecha_inicio,fecha_termino:state==='completada'?isoNow():null}).eq('id',t.id);if(error)throw error}await loadDetail(selected)}catch(e:any){setError(e.message)}
  }
  async function updateDiagnosis(){
