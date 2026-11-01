@@ -25,6 +25,6 @@ jobs:
       - name: Report dependency vulnerabilities
         run: npm audit --json > npm-audit.json || true
       - name: Print dependency audit summary
-        run: node -e "const a=require('./npm-audit.json'); for (const [name,v] of Object.entries(a.vulnerabilities||{})) console.log(name+': '+v.severity+' | '+(v.fixAvailable?'fix available':'no automatic fix'))"
+        run: node scripts/audit-summary.mjs
       - name: Check TypeScript
         run: npm run typecheck
