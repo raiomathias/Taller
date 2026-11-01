@@ -39,8 +39,13 @@ Deno.serve(async (req: Request) => {
   if (action === "update") {
     if (!body.membership_id || name.length < 3 || !allowed.includes(role)) return response({ error: "Datos de usuario inválidos." }, 400);
     if (membership.rol === "gerente" && ["administrador", "gerente"].includes(role)) return response({ error: "Solo un administrador puede asignar roles de administración o gerencia." }, 403);
-    const { data: target, error: targetError } = await admin.from("usuarios_taller").select("usuario_id").eq("id", body.membership_id).eq("taller_id", body.taller_id).maybeSingle();
+    const { data: target, error: targetError } = await admin.from("usuarios_taller").select("usuario_id,rol,activo").eq("id", body.membership_id).eq("taller_id", body.taller_id).maybeSingle();
     if (targetError || !target) return response({ error: "No se encontró la membresía indicada." }, 404);
+    if (target.rol === "administrador" && (role !== "administrador" || body.activo === false)) {
+      const { count, error: countError } = await admin.from("usuarios_taller").select("id", { count: "exact", head: true }).eq("taller_id", body.taller_id).eq("rol", "administrador").eq("activo", true);
+      if (countError) return response({ error: countError.message }, 400);
+      if ((count || 0) <= 1) return response({ error: "No puedes desactivar ni degradar al último administrador activo del taller." }, 409);
+    }
     const { error: profileUpdateError } = await admin.from("perfiles").upsert({ id: target.usuario_id, nombre_completo: name }, { onConflict: "id" });
     if (profileUpdateError) return response({ error: "No se pudo actualizar el nombre: " + profileUpdateError.message }, 400);
     const { error: membershipUpdateError } = await admin.from("usuarios_taller").update({ rol: role, activo: body.activo !== false }).eq("id", body.membership_id).eq("taller_id", body.taller_id);
