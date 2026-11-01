@@ -6,11 +6,9 @@ const corsFor = (origin: string) => ({
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 });
-const response = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
-  status, headers: { ...cors, "Content-Type": "application/json" },
-});
 Deno.serve(async (req: Request) => {
   const cors = corsFor(req.headers.get("origin") || "");
+  const response = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return response({ error: "Método no permitido." }, 405);
   const url = Deno.env.get("SUPABASE_URL")!;
@@ -27,17 +25,17 @@ Deno.serve(async (req: Request) => {
   const name = (body.nombre_completo || "").trim().replace(/\s+/g, " ");
   const email = (body.email || "").trim().toLowerCase();
   const role = body.rol || "mecanico";
+  const action = body.action || "invite";
   const allowed = ["administrador", "gerente", "jefe_taller", "recepcionista", "mecanico", "bodeguero", "administracion"];
-  if (!body.taller_id || name.length < 3 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !allowed.includes(role)) {
+  if (!body.taller_id || name.length < 3 || !allowed.includes(role) || (action === "invite" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
     return response({ error: "Completa nombre, correo, rol y taller con datos válidos." }, 400);
   }
   const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
   const { data: membership, error: memberError } = await admin.from("usuarios_taller")
     .select("rol").eq("taller_id", body.taller_id).eq("usuario_id", authData.user.id).eq("activo", true).maybeSingle();
   if (memberError || !membership || !["administrador", "gerente"].includes(membership.rol)) {
-    return response({ error: "No tienes permisos para invitar usuarios a este taller." }, 403);
+    return response({ error: "No tienes permisos para administrar usuarios de este taller." }, 403);
   }
-  const action = body.action || "invite";
   if (action === "update") {
     if (!body.membership_id || name.length < 3 || !allowed.includes(role)) return response({ error: "Datos de usuario inválidos." }, 400);
     if (membership.rol === "gerente" && ["administrador", "gerente"].includes(role)) return response({ error: "Solo un administrador puede asignar roles de administración o gerencia." }, 403);
