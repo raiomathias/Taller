@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Activity, AlertTriangle, ArrowDownToLine, ArrowUpFromLine, Boxes, CarFront, Check, ChevronDown, ClipboardList, Command, LayoutDashboard, LogOut, Moon, Package, Plus, Search, Settings2, Sun, Users, Warehouse, Wrench, X, Pencil, Trash2, RefreshCw, Tags, Truck, History, CircleDollarSign } from 'lucide-react'
+import { Activity, AlertTriangle, ArrowDownToLine, Boxes, CarFront, Check, ChevronDown, Command, LayoutDashboard, LogOut, Moon, Package, Plus, Search, Sun, Users, Warehouse, Wrench, X, Pencil, Trash2, RefreshCw, Tags, Truck, History, CircleDollarSign } from 'lucide-react'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 
 type Section = 'Resumen'|'Inventario'|'Clientes'|'Vehículos'|'Proveedores'|'Categorías'|'Bodegas'|'Movimientos'
@@ -159,7 +159,7 @@ export default function App(){
      if(Number(s.cantidad)+delta<0)throw new Error('Stock insuficiente. Disponible: '+s.cantidad)
      s.cantidad=Number(s.cantidad)+delta;d.movimientos.unshift({id:crypto.randomUUID(),created_at:new Date().toISOString(),producto_id:form.producto_id,bodega_id:form.bodega_id,tipo:form.tipo,cantidad_delta:delta,costo_unitario:Number(form.costo_unitario)||0,motivo:form.motivo,referencia:form.referencia})
     }else if(section==='Inventario'&&!editing){
-     const id=crypto.randomUUID();const row={...form,id,activo:true,stock:[]};d.productos.unshift(row)
+     const id=crypto.randomUUID();const row={...form,id,activo:true,stock:[{cantidad:0,reservado:0,bodega_id:d.bodegas[0]?.id||'b1'}]};d.productos.unshift(row)
     }else{
      const index=d[collection].findIndex((x:Row)=>x.id===editing?.id)
      if(editing&&index>=0)d[collection][index]={...d[collection][index],...form}
@@ -172,7 +172,7 @@ export default function App(){
      const {error}=await supabase.rpc('registrar_movimiento_stock',{p_taller_id:workshop.taller_id,p_producto_id:form.producto_id,p_bodega_id:form.bodega_id,p_tipo:form.tipo,p_cantidad:Number(form.cantidad),p_costo_unitario:Number(form.costo_unitario)||0,p_motivo:form.motivo,p_referencia:form.referencia||null})
      if(error)throw error
     }else{
-     const payload={...form,taller_id:workshop.taller_id};delete payload.id;delete payload.created_at;delete payload.updated_at
+     const payload={...form,taller_id:workshop.taller_id};delete payload.id;delete payload.created_at;delete payload.updated_at;delete payload.stock;delete payload.categorias_productos;delete payload.proveedores
      for(const key of ['controla_stock','es_principal'])if(typeof payload[key]==='string')payload[key]=payload[key]==='true'
      const result=editing?await supabase.from(table).update(payload).eq('id',editing.id).eq('taller_id',workshop.taller_id):await supabase.from(table).insert(payload)
      if(result.error)throw result.error
