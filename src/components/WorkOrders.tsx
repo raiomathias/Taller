@@ -122,10 +122,15 @@ export default function WorkOrders({workshop,userId,role,demoMode=false}:Props){
  }
  async function changeStatus(next:string){
   if(!selected||!canEditOrder)return
+  if(next==='en_reparacion'&&!['autorizada','esperando_repuestos'].includes(selected.estado)){setError('La OT debe estar autorizada antes de comenzar la reparación.');return}
+  if(next==='control_calidad'&&selected.estado!=='en_reparacion'){setError('La OT debe estar en reparación antes del control de calidad.');return}
+  if(next==='lista_entrega'&&selected.estado!=='control_calidad'){setError('Primero debe completarse el control de calidad.');return}
+  if(next==='entregada'&&selected.estado!=='lista_entrega'){setError('La OT debe estar lista para entrega.');return}
   if(next==='entregada'&&Number(selected.saldo)>0&&!confirm('La orden mantiene un saldo pendiente. ¿Confirmas la entrega?'))return
+  if(next==='cancelada'&&!confirm('¿Confirmas cancelar esta orden de trabajo?'))return
   setSaving(true);setError('')
   const patch:Row={estado:next}
-  if(next==='autorizada'){patch.autorizado_at=isoNow();patch.autorizado_por=sessionName}
+  if(next==='autorizada'){const approver=prompt('Nombre de la persona que autoriza el presupuesto:');if(!approver?.trim())return;patch.autorizado_at=isoNow();patch.autorizado_por=approver.trim()}
   if(next==='en_reparacion'&&!selected.fecha_inicio)patch.fecha_inicio=isoNow()
   if(next==='control_calidad')patch.fecha_termino=isoNow()
   if(next==='entregada'){patch.fecha_entrega=isoNow();patch.entregado_por=userId||null}
@@ -136,7 +141,6 @@ export default function WorkOrders({workshop,userId,role,demoMode=false}:Props){
   }catch(e:any){setError(e.message||'No se pudo actualizar el estado.')}
   setSaving(false)
  }
- const sessionName = team.find(m=>m.usuario_id===userId)?.perfiles?.nombre_completo||'Usuario'
  async function addLine(){
   if(!selected||!line.descripcion?.trim()){setError('Ingresa una descripción.');return}
   const qty=Number(line.cantidad)||1
@@ -191,6 +195,19 @@ export default function WorkOrders({workshop,userId,role,demoMode=false}:Props){
   if(!selected)return
   setSaving(true)
   try{if(demoMode){const d=demoRead();Object.assign(d.ordenes_trabajo.find((x:Row)=>x.id===selected.id),{diagnostico:selected.diagnostico});demoWrite(d)}else{const {error}=await supabase.from('ordenes_trabajo').update({diagnostico:selected.diagnostico}).eq('id',selected.id);if(error)throw error}setNotice('Diagnóstico guardado.');await load()}catch(e:any){setError(e.message)}setSaving(false)
+ }
+ async function toggleInspectionItem(insp:Row,index:number){
+  if(!canOperate)return
+  const items=Array.isArray(insp.items)?[...insp.items]:[]
+  if(!items[index])return
+  items[index]={...items[index],estado:items[index].estado==='completado'?'pendiente':'completado'}
+  const allDone=items.length>0&&items.every((x:Row)=>x.estado==='completado')
+  const patch={items,resultado:allDone?'aprobada':'pendiente',revisado_por:allDone?(userId||null):null,revisado_at:allDone?isoNow():null}
+  try{
+   if(demoMode){const d=demoRead();const row=(d.ot_inspecciones||[]).find((x:Row)=>x.id===insp.id);Object.assign(row,patch);demoWrite(d)}
+   else{const {error}=await supabase.from('ot_inspecciones').update(patch).eq('id',insp.id);if(error)throw error}
+   await loadDetail(selected)
+  }catch(e:any){setError(e.message||'No se pudo actualizar el checklist.')}
  }
  async function saveInspection(stage:string){
   if(!selected)return
@@ -257,7 +274,7 @@ export default function WorkOrders({workshop,userId,role,demoMode=false}:Props){
     {tab==='trabajos'&&<div className="wo-tab-content"><div className="wo-block-title"><h3>Repuestos, insumos y mano de obra</h3>{canEditOrder&&<button className="primary small" onClick={()=>{setLine({tipo:'mano_obra',cantidad:1,precio_unitario:0});setShowLine(true)}}><Plus size={14}/> Agregar detalle</button>}</div>{details.length===0?<p className="muted">Aún no hay detalles.</p>:<div className="wo-lines">{details.map(d=><div className="wo-line" key={d.id}><div><b>{d.descripcion}</b><small>{d.tipo.replace('_',' ')} · {d.cantidad} × {money(d.precio_unitario)} {d.consumido?'· Stock consumido':''}</small></div><strong>{money(Number(d.cantidad)*Number(d.precio_unitario))}</strong></div>)}</div>}<div className="wo-total"><span>Subtotal</span><b>{money(selected.subtotal)}</b><span>Impuestos</span><b>{money(selected.impuesto)}</b><span>Total</span><b>{money(selected.total)}</b></div></div>}
     {tab==='tareas'&&<div className="wo-tab-content"><div className="wo-block-title"><h3>Tareas y asignaciones</h3>{canOperate&&<button className="primary small" onClick={()=>setShowTask(true)}><Plus size={14}/> Nueva tarea</button>}</div>{tasks.length===0?<p className="muted">No hay tareas asignadas.</p>:tasks.map(t=><div className="wo-task" key={t.id}><div><b>{t.titulo}</b><small>{t.descripcion||'Sin descripción'} · {t.horas_estimadas} h estimadas · {assignments.filter(a=>a.tarea_id===t.id).map(a=>team.find(m=>m.usuario_id===a.mecanico_id)?.perfiles?.nombre_completo||'Mecánico').join(', ')||'Sin asignar'}</small>{canAssign&&<select value={assignments.find(a=>a.tarea_id===t.id)?.mecanico_id||''} onChange={e=>void assignTask(t,e.target.value)}><option value="">Sin asignar</option>{team.filter(m=>m.rol==='mecanico').map(m=><option key={m.usuario_id} value={m.usuario_id}>{m.perfiles?.nombre_completo||m.usuario_id}</option>)}</select>}</div><select value={t.estado} onChange={e=>void setTaskState(t,e.target.value)}><option value="pendiente">Pendiente</option><option value="en_progreso">En progreso</option><option value="bloqueada">Bloqueada</option><option value="completada">Completada</option></select></div>)}</div>}
     {tab==='pagos'&&<div className="wo-tab-content"><div className="wo-block-title"><h3>Pagos registrados</h3>{canCharge&&<button className="primary small" onClick={()=>setShowPayment(true)}><Plus size={14}/> Registrar pago</button>}</div>{payments.length===0?<p className="muted">Sin pagos registrados.</p>:payments.map(p=><div className="wo-line" key={p.id}><div><b>{money(p.monto)} · {p.metodo}</b><small>{new Date(p.created_at).toLocaleString('es-CL')} {p.referencia?'· '+p.referencia:''}</small></div><Check size={16}/></div>)}<div className="wo-total"><span>Total pagado</span><b>{money(totalPaid)}</b><span>Saldo pendiente</span><b>{money(selected.saldo)}</b></div></div>}
-    {tab==='inspeccion'&&<div className="wo-tab-content"><div className="wo-block-title"><h3>Checklist e inspecciones</h3><button className="secondary small" onClick={()=>void saveInspection('calidad')}><Plus size={14}/> Crear checklist calidad</button></div>{inspections.length===0?<p className="muted">No hay inspecciones todavía.</p>:inspections.map(i=><div className="wo-inspection" key={i.id}><b>{i.etapa==='recepcion'?'Recepción':i.etapa==='calidad'?'Control de calidad':i.etapa}</b><span className="wo-status">{i.resultado}</span><small>{Array.isArray(i.items)?i.items.length+' puntos de revisión':'Checklist'}</small></div>)}</div>}
+    {tab==='inspeccion'&&<div className="wo-tab-content"><div className="wo-block-title"><h3>Checklist e inspecciones</h3>{canOperate&&<button className="secondary small" onClick={()=>void saveInspection('calidad')}><Plus size={14}/> Crear checklist calidad</button>}</div>{inspections.length===0?<p className="muted">No hay inspecciones todavía.</p>:inspections.map(i=><div className="wo-inspection-card" key={i.id}><div className="wo-block-title"><b>{i.etapa==='recepcion'?'Recepción':i.etapa==='calidad'?'Control de calidad':i.etapa}</b><span className="wo-status">{i.resultado}</span></div>{(i.items||[]).map((item:Row,index:number)=><label className="wo-check" key={index}><input type="checkbox" checked={item.estado==='completado'} disabled={!canOperate} onChange={()=>void toggleInspectionItem(i,index)}/><span>{item.label}</span></label>)}{(!i.items||i.items.length===0)&&<small>Checklist vacío</small>}</div>)}</div>}
     {tab==='archivos'&&<div className="wo-tab-content"><div className="wo-block-title"><h3>Fotografías y documentos</h3>{canOperate&&<label className="secondary small file-pick"><ImagePlus size={14}/> Adjuntar<input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={e=>void uploadEvidence(e.target.files?.[0])}/></label>}</div>{attachments.length===0?<p className="muted">No hay archivos adjuntos. JPG, PNG, WEBP o PDF; máximo 15 MB.</p>:attachments.map(a=><button className="wo-line wo-file" key={a.id} onClick={()=>void openAttachment(a)}><div><b>{a.nombre_archivo}</b><small>{a.mime_type} · {Math.round((a.tamano_bytes||0)/1024)} KB</small></div><ChevronRight size={16}/></button>)}</div>}
     {tab==='tiempos'&&<div className="wo-tab-content"><h3>Registro de tiempo de mecánicos</h3>{times.length===0?<p className="muted">Sin tiempos registrados.</p>:times.map(t=><div className="wo-line" key={t.id}><div><b>{team.find(m=>m.usuario_id===t.mecanico_id)?.perfiles?.nombre_completo||'Mecánico'}</b><small>{new Date(t.inicio).toLocaleString('es-CL')} · {t.termino?new Date(t.termino).toLocaleString('es-CL'):'En curso'}</small></div><strong>{t.duracion_minutos??'—'} min</strong></div>)}</div>}
    </>}
