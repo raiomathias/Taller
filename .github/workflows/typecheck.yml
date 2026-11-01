@@ -7,6 +7,7 @@ on:
       - '*.json'
       - 'tsconfig*.json'
       - '.github/workflows/typecheck.yml'
+      - 'scripts/**'
   pull_request:
     branches: [main]
   workflow_dispatch:
