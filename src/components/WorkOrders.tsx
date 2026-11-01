@@ -4,7 +4,7 @@ import DatePicker from './DatePicker'
 import { Plus, Search, RefreshCw, Wrench, CarFront, ClipboardCheck, Clock3, CreditCard, ImagePlus, Check, X, ChevronRight, AlertTriangle, CalendarClock } from 'lucide-react'
 
 type Row = Record<string, any>
-type Props = { workshop: Row; userId?: string; role: string; demoMode?: boolean }
+type Props = { workshop: Row; userId?: string; role: string; demoMode?: boolean; permissions?: {view?:boolean;create?:boolean;edit?:boolean} }
 const money = (n:number) => new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0}).format(Number(n)||0)
 const statusLabels:Record<string,string> = {recibida:'Recibida',diagnostico:'Diagnóstico',presupuestada:'Presupuestada',esperando_autorizacion:'Esperando autorización',autorizada:'Autorizada',esperando_repuestos:'Esperando repuestos',en_reparacion:'En reparación',control_calidad:'Control de calidad',lista_entrega:'Lista para entrega',entregada:'Entregada',cancelada:'Cancelada'}
 const statusOrder = ['recibida','diagnostico','presupuestada','esperando_autorizacion','autorizada','esperando_repuestos','en_reparacion','control_calidad','lista_entrega','entregada','cancelada']
@@ -16,7 +16,7 @@ const isoNow = () => new Date().toISOString()
 const demoKey = 'taller-demo-data-v1'
 function demoRead(){try{return JSON.parse(localStorage.getItem(demoKey)||'{}')}catch{return {}}}
 function demoWrite(d:Row){localStorage.setItem(demoKey,JSON.stringify(d))}
-export default function WorkOrders({workshop,userId,role,demoMode=false}:Props){
+export default function WorkOrders({workshop,userId,role,demoMode=false,permissions}:Props){
  const [orders,setOrders]=useState<Row[]>([])
  const [clients,setClients]=useState<Row[]>([])
  const [vehicles,setVehicles]=useState<Row[]>([])
@@ -47,11 +47,11 @@ export default function WorkOrders({workshop,userId,role,demoMode=false}:Props){
  const [line,setLine]=useState<Row>({tipo:'mano_obra',cantidad:1,precio_unitario:0})
  const [payment,setPayment]=useState<Row>({metodo:'transferencia',monto:''})
  const [task,setTask]=useState<Row>({prioridad:'normal',horas_estimadas:1})
- const canCreate = rolesEdit.includes(role)
- const canOperate = ['administrador','gerente','jefe_taller','mecanico','recepcionista','administracion'].includes(role)
- const canEditOrder = rolesEdit.includes(role)
- const canAssign = ['administrador','gerente','jefe_taller'].includes(role)
- const canCharge = ['administrador','gerente','recepcionista','administracion'].includes(role)
+ const canCreate = permissions?.create ?? rolesEdit.includes(role)
+ const canOperate = ['administrador','gerente','jefe_taller','mecanico','recepcionista','administracion'].includes(role) && permissions?.view!==false
+ const canEditOrder = permissions?.edit ?? rolesEdit.includes(role)
+ const canAssign = ['administrador','gerente','jefe_taller'].includes(role) && canEditOrder
+ const canCharge = ['administrador','gerente','recepcionista','administracion'].includes(role) && permissions?.view!==false
  const workshopId = workshop?.taller_id || workshop?.id
 
  const load = useCallback(async()=>{
