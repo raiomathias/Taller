@@ -165,7 +165,7 @@ export default function App(){
    const e=[p.error,c.error,v.error,m.error].find(Boolean);if(e)setError(e.message)
   }else{
    const table=tableName(section)
-   const select=section==='Inventario'?'*,stock(cantidad,reservado,bodega_id),categorias_productos(nombre),proveedores(razon_social)':section==='Usuarios'?'id,usuario_id,rol,activo,created_at,perfiles(nombre_completo)':section==='Auditoría'?'id,taller_id,usuario_id,entidad,entidad_id,accion,detalle,created_at,perfiles(nombre_completo)':'*'
+   const select=section==='Inventario'?'*,stock(cantidad,reservado,bodega_id),categorias_productos(nombre),proveedores(razon_social)':section==='Usuarios'?'id,usuario_id,rol,activo,created_at,perfiles!usuarios_taller_perfiles_fkey(nombre_completo)':section==='Auditoría'?'id,taller_id,usuario_id,entidad,entidad_id,accion,detalle,created_at,perfiles!auditoria_perfiles_fkey(nombre_completo)':'*'
    const {data,error}=await supabase.from(table).select(select).eq('taller_id',id).order('created_at',{ascending:false}).limit(500)
    if(error)setError(error.message)
    setRows(data||[])
