@@ -72,7 +72,7 @@ export default function WorkOrders({workshop,userId,role,demoMode=false,permissi
    supabase.from('vehiculos').select('id,cliente_id,patente,marca,modelo,anio,kilometraje').eq('taller_id',workshopId).eq('activo',true).order('patente'),
    supabase.from('productos').select('id,nombre,sku,tipo,unidad,costo_unitario,precio_venta,controla_stock').eq('taller_id',workshopId).eq('activo',true).order('nombre'),
    supabase.from('bodegas').select('id,nombre,es_principal').eq('taller_id',workshopId).eq('activo',true).order('nombre'),
-   supabase.from('usuarios_taller').select('usuario_id,rol,perfiles(nombre_completo)').eq('taller_id',workshopId).eq('activo',true),
+   supabase.from('usuarios_taller').select('usuario_id,rol,perfiles!usuarios_taller_perfiles_fkey(nombre_completo)').eq('taller_id',workshopId).eq('activo',true),
    supabase.from('servicios_taller').select('id,nombre,descripcion,precio,estado,creado_por').eq('taller_id',workshopId).order('nombre')
   ])
   const e=[o.error,c.error,v.error,p.error,w.error,m.error,sv.error].find(Boolean);if(e)setError(e.message)
