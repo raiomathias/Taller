@@ -95,7 +95,9 @@ export default function App(){
  const [loginMode,setLoginMode]=useState<'login'|'signup'>('login')
  const [credentials,setCredentials]=useState({email:'',password:'',name:''})
  const [setup,setSetup]=useState({nombre:'',telefono:'',email:''})
- const [demoData,setDemoData]=useState<Row>(demoMode?loadDemo():{})\n const [config,setConfig]=useState<Row>(demoMode?loadDemo().config:{prefijo_ot:'OT',proximo_folio_ot:1,stock_negativo_permitido:false,impuesto_porcentaje:19,tema_preferido:'dark'})\n const [workshopForm,setWorkshopForm]=useState<Row>(demoMode?loadDemo().taller:{})
+ const [demoData,setDemoData]=useState<Row>(demoMode?loadDemo():{})
+ const [config,setConfig]=useState<Row>(demoMode?loadDemo().config:{prefijo_ot:'OT',proximo_folio_ot:1,stock_negativo_permitido:false,impuesto_porcentaje:19,tema_preferido:'dark'})
+ const [workshopForm,setWorkshopForm]=useState<Row>(demoMode?loadDemo().taller:{})
 
  useEffect(()=>{document.documentElement.dataset.theme=theme;localStorage.setItem('taller-theme',theme)},[theme])
  useEffect(()=>{if(!demoMode){supabase.auth.getSession().then(({data})=>setSession(data.session));const {data}=supabase.auth.onAuthStateChange((_e,s)=>setSession(s));return()=>data.subscription.unsubscribe()}},[])
@@ -117,7 +119,8 @@ export default function App(){
   setLoading(true);setError('')
   if(demoMode){
    const d=demoData;setLookups(demoLookups(d))
-   if(section==='Configuración'){setConfig(d.config||config);setWorkshopForm(d.taller||workshopForm);setRows([]);setLoading(false);return}\n   if(section==='Resumen'){const active=d.productos.filter((x:Row)=>x.activo);const low=active.filter((x:Row)=>(x.stock||[]).reduce((a:number,y:Row)=>a+Number(y.cantidad),0)<=Number(x.stock_minimo)).length;setStats({products:active.length,clients:d.clientes.filter((x:Row)=>x.activo).length,vehicles:d.vehiculos.filter((x:Row)=>x.activo).length,low,value:active.reduce((a:number,x:Row)=>a+Number(x.costo_unitario)*((x.stock||[]).reduce((b:number,y:Row)=>b+Number(y.cantidad),0)),0),movements:d.movimientos.length});setRows([])}
+   if(section==='Configuración'){setConfig(d.config||config);setWorkshopForm(d.taller||workshopForm);setRows([]);setLoading(false);return}
+   if(section==='Resumen'){const active=d.productos.filter((x:Row)=>x.activo);const low=active.filter((x:Row)=>(x.stock||[]).reduce((a:number,y:Row)=>a+Number(y.cantidad),0)<=Number(x.stock_minimo)).length;setStats({products:active.length,clients:d.clientes.filter((x:Row)=>x.activo).length,vehicles:d.vehiculos.filter((x:Row)=>x.activo).length,low,value:active.reduce((a:number,x:Row)=>a+Number(x.costo_unitario)*((x.stock||[]).reduce((b:number,y:Row)=>b+Number(y.cantidad),0)),0),movements:d.movimientos.length});setRows([])}
    else setRows((d[({Inventario:'productos',Clientes:'clientes',Vehículos:'vehiculos',Proveedores:'proveedores',Categorías:'categorias',Bodegas:'bodegas',Movimientos:'movimientos',Usuarios:'usuarios',Auditoría:'auditoria'} as Record<string,string>)[section]]||[]).filter((x:Row)=>x.activo!==false||section==='Movimientos'))
    setLoading(false);return
   }
