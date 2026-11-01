@@ -35,6 +35,8 @@ function demoSeed(){
   proveedores:[{id:'s1',razon_social:'Repuestos del Sur SpA',rut:'76.123.456-7',contacto:'Camila Soto',email:'ventas@example.com',telefono:'+56 9 6123 4567',activo:true},{id:'s2',razon_social:'Lubricantes Patagonia',rut:'77.222.333-4',contacto:'Diego Pérez',email:'pedidos@example.com',telefono:'+56 65 223 9988',activo:true}],
   categorias:[{id:'g1',nombre:'Filtros y lubricantes',tipo:'repuesto',color:'#0ea5e9',activo:true},{id:'g2',nombre:'Insumos de taller',tipo:'insumo',color:'#8b5cf6',activo:true},{id:'g3',nombre:'Herramientas',tipo:'herramienta',color:'#16a34a',activo:true}],
   bodegas:[{id:'b1',nombre:'Bodega principal',ubicacion:'Área de almacenamiento',es_principal:true,activo:true}],
+  usuarios:[{id:'u1',usuario_id:'demo-user',rol:'administrador',activo:true}],
+  auditoria:[{id:'a1',created_at:today,entidad:'taller',accion:'crear',entidad_id:'demo-taller',usuario_id:'demo-user',detalle:{origen:'datos de demostración'}},{id:'a2',created_at:today,entidad:'productos',accion:'crear',entidad_id:'p1',usuario_id:'demo-user',detalle:{sku:'FIL-001'}}],
   movimientos:[
    {id:'m1',created_at:today,producto_id:'p1',bodega_id:'b1',tipo:'entrada',cantidad_delta:18,costo_unitario:4500,motivo:'Carga inicial de demostración',referencia:'DEMO-001'},
    {id:'m2',created_at:today,producto_id:'p2',bodega_id:'b1',tipo:'entrada',cantidad_delta:7,costo_unitario:6200,motivo:'Carga inicial de demostración',referencia:'DEMO-002'},
@@ -54,6 +56,7 @@ function fieldsFor(s:Section,lookups:Row):Field[]{
  Proveedores:[{key:'razon_social',label:'Razón social',wide:true,required:true},{key:'rut',label:'RUT'},{key:'contacto',label:'Contacto'},{key:'telefono',label:'Teléfono'},{key:'email',label:'Correo electrónico'},{key:'direccion',label:'Dirección',wide:true},{key:'notas',label:'Notas',wide:true}],
  Categorías:[{key:'nombre',label:'Nombre',required:true},{key:'tipo',label:'Tipo',options:['repuesto','insumo','herramienta','equipo','servicio','otro']},{key:'descripcion',label:'Descripción',wide:true},{key:'color',label:'Color',type:'text'}],
  Bodegas:[{key:'nombre',label:'Nombre de bodega',required:true},{key:'ubicacion',label:'Ubicación'},{key:'es_principal',label:'Bodega principal',options:['true','false']}],
+ Usuarios:[{key:'usuario_id',label:'UUID del usuario existente',wide:true,required:true},{key:'rol',label:'Rol',options:['administrador','gerente','jefe_taller','recepcionista','mecanico','bodeguero','administracion']},{key:'activo',label:'Membresía activa',options:['true','false']}],
  Movimientos:[{key:'producto_id',label:'Producto',options:(lookups.productos||[]).map((x:Row)=>x.id),required:true},{key:'bodega_id',label:'Bodega',options:(lookups.bodegas||[]).map((x:Row)=>x.id),required:true},{key:'tipo',label:'Tipo de movimiento',options:['entrada','salida','ajuste']},{key:'cantidad',label:'Cantidad (ajuste admite negativo)',type:'number',required:true},{key:'costo_unitario',label:'Costo unitario (CLP)',type:'number'},{key:'motivo',label:'Motivo',wide:true,required:true},{key:'referencia',label:'Documento / referencia'}]
  }
  return f[s]||[]
@@ -65,7 +68,7 @@ function displayValue(row:Row,key:string,lookups:Row){
  if(key==='bodega_id')return lookups.bodegas?.find((x:Row)=>x.id===row[key])?.nombre||row[key]
  if(key==='categoria_id')return lookups.categorias?.find((x:Row)=>x.id===row[key])?.nombre||'—'
  if(key==='proveedor_principal_id')return lookups.proveedores?.find((x:Row)=>x.id===row[key])?.razon_social||'—'
- if(key==='created_at')return row[key]?new Date(row[key]).toLocaleString('es-CL'):'—'\n if(key==='detalle')return row[key]?JSON.stringify(row[key]):'—'\n if(key==='detalle')return row[key]?JSON.stringify(row[key]):'—'
+ if(key==='created_at')return row[key]?new Date(row[key]).toLocaleString('es-CL'):'—'\n if(key==='detalle')return row[key]?JSON.stringify(row[key]):'—'
  if(key==='costo_unitario'||key==='precio_venta')return money(row[key])
  if(typeof row[key]==='boolean')return row[key]?'Sí':'No'
  return row[key]??'—'
@@ -173,7 +176,7 @@ export default function App(){
      if(error)throw error
     }else{
      const payload={...form,taller_id:workshop.taller_id};delete payload.id;delete payload.created_at;delete payload.updated_at;delete payload.stock;delete payload.categorias_productos;delete payload.proveedores
-     for(const key of ['controla_stock','es_principal'])if(typeof payload[key]==='string')payload[key]=payload[key]==='true'
+     for(const key of ['controla_stock','es_principal','activo'])if(typeof payload[key]==='string')payload[key]=payload[key]==='true'
      const result=editing?await supabase.from(table).update(payload).eq('id',editing.id).eq('taller_id',workshop.taller_id):await supabase.from(table).insert(payload)
      if(result.error)throw result.error
     }
