@@ -1,15 +1,16 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const cors = {
-  "Access-Control-Allow-Origin": "https://raiomathias.github.io",
+const corsFor = (origin: string) => ({
+  "Access-Control-Allow-Origin": ["https://raiomathias.github.io", "http://localhost:5173", "http://127.0.0.1:5173"].includes(origin) ? origin : "https://raiomathias.github.io",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+});
 const response = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status, headers: { ...cors, "Content-Type": "application/json" },
 });
 Deno.serve(async (req: Request) => {
+  const cors = corsFor(req.headers.get("origin") || "");
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return response({ error: "Método no permitido." }, 405);
   const url = Deno.env.get("SUPABASE_URL")!;
