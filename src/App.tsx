@@ -158,8 +158,8 @@ export default function App(){
     const d={...demoData};const collection=({Inventario:'productos',Clientes:'clientes',Vehículos:'vehiculos',Proveedores:'proveedores',Categorías:'categorias',Bodegas:'bodegas',Movimientos:'movimientos',Usuarios:'usuarios',Auditoría:'auditoria'} as Record<string,string>)[section]
     if(section==='Movimientos'){
      const qty=Number(form.cantidad);const delta=form.tipo==='entrada'?Math.abs(qty):form.tipo==='salida'?-Math.abs(qty):qty
-     const p=d.productos.find((x:Row)=>x.id===form.producto_id);const s=p?.stock?.find((x:Row)=>x.bodega_id===form.bodega_id)
-     if(!p||!s)throw new Error('Selecciona un producto y una bodega válidos.')
+     const p=d.productos.find((x:Row)=>x.id===form.producto_id);if(!p)throw new Error('Selecciona un producto válido.')
+     p.stock=p.stock||[];let s=p.stock.find((x:Row)=>x.bodega_id===form.bodega_id);if(!s){s={cantidad:0,reservado:0,bodega_id:form.bodega_id};p.stock.push(s)}
      if(Number(s.cantidad)+delta<0)throw new Error('Stock insuficiente. Disponible: '+s.cantidad)
      s.cantidad=Number(s.cantidad)+delta;d.movimientos.unshift({id:crypto.randomUUID(),created_at:new Date().toISOString(),producto_id:form.producto_id,bodega_id:form.bodega_id,tipo:form.tipo,cantidad_delta:delta,costo_unitario:Number(form.costo_unitario)||0,motivo:form.motivo,referencia:form.referencia})
     }else if(section==='Inventario'&&!editing){
