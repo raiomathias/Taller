@@ -44,8 +44,19 @@ Deno.serve(async (req: Request) => {
     data: { nombre_completo: name },
     redirectTo: "https://raiomathias.github.io/Taller/",
   });
-  if (inviteError || !invited.user) return response({ error: inviteError?.message || "No se pudo enviar la invitación." }, 400);
-  const userId = invited.user.id;
+  let userId: string;
+  let invitationSent = false;
+  if (invited?.user) {
+    userId = invited.user.id;
+    invitationSent = true;
+  } else {
+    // A confirmed account cannot be invited again; add that existing account to this workshop instead.
+    const { data: users, error: listError } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    if (listError) return response({ error: inviteError?.message || listError.message || "No se pudo localizar la cuenta." }, 400);
+    const existingUser = users.users.find((u) => (u.email || "").toLowerCase() === email);
+    if (!existingUser) return response({ error: inviteError?.message || "No se pudo crear ni localizar la cuenta." }, 400);
+    userId = existingUser.id;
+  }
   const { error: profileError } = await admin.from("perfiles").upsert({
     id: userId, nombre_completo: name,
   }, { onConflict: "id" });
@@ -56,5 +67,5 @@ Deno.serve(async (req: Request) => {
     ? await admin.from("usuarios_taller").update({ rol: role, activo: true }).eq("id", existing.id)
     : await admin.from("usuarios_taller").insert({ taller_id: body.taller_id, usuario_id: userId, rol: role, activo: true });
   if (membershipWrite.error) return response({ error: "Usuario invitado, pero no se pudo asignar al taller: " + membershipWrite.error.message }, 500);
-  return response({ ok: true, message: "Invitación enviada.", user: { nombre_completo: name, email, rol: role } });
+  return response({ ok: true, message: invitationSent ? "Invitación enviada." : "Cuenta existente añadida al taller.", user: { nombre_completo: name, email, rol: role } });
 });
