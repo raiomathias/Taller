@@ -49,12 +49,12 @@ Deno.serve(async (req: Request) => {
   const { error: profileError } = await admin.from("perfiles").upsert({
     id: userId, nombre_completo: name,
   }, { onConflict: "id" });
-  if (profileError) return response({ error: "Usuario invitado, pero no se pudo crear su perfil: " + profileError.message, user_id: userId }, 500);
+  if (profileError) return response({ error: "Usuario invitado, pero no se pudo crear su perfil: " + profileError.message }, 500);
   const { data: existing } = await admin.from("usuarios_taller").select("id")
     .eq("taller_id", body.taller_id).eq("usuario_id", userId).maybeSingle();
   const membershipWrite = existing
     ? await admin.from("usuarios_taller").update({ rol: role, activo: true }).eq("id", existing.id)
     : await admin.from("usuarios_taller").insert({ taller_id: body.taller_id, usuario_id: userId, rol: role, activo: true });
   if (membershipWrite.error) return response({ error: "Usuario invitado, pero no se pudo asignar al taller: " + membershipWrite.error.message, user_id: userId }, 500);
-  return response({ ok: true, message: "Invitación enviada.", user: { id: userId, nombre_completo: name, email, rol: role } });
+  return response({ ok: true, message: "Invitación enviada.", user: { nombre_completo: name, email, rol: role } });
 });
