@@ -41,6 +41,8 @@ Sin el secret, la página queda en modo demostración local.
 - Catálogo de repuestos, insumos, herramientas y equipos.
 - Categorías, proveedores y bodegas.
 - Fichas de clientes y vehículos.
+- Gestión de usuarios del taller y roles.
+- Consulta de auditoría para administración y gerencia.
 - Movimientos de entrada, salida y ajuste con validación de stock.
 - Kardex de movimientos.
 - Edición y desactivación de registros.
