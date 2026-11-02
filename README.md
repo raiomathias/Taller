@@ -77,3 +77,10 @@ El backend aplica RLS por taller y permisos por rol. Los cambios de stock se eje
 
 - Corrige la edición de registros para no enviar campos de perfil (`nombre_completo` y `perfiles`) a tablas que no los contienen, especialmente proveedores.
 - Refuerza la limpieza del payload antes de guardar registros generales.
+
+
+## Versión 0.5.2
+
+- Inicializa explícitamente el campo `razon_social` al crear proveedores.
+- Valida en frontend todos los campos obligatorios antes de enviar escrituras a Supabase.
+- Normaliza la razón social y evita insertar proveedores con valores vacíos o nulos.
